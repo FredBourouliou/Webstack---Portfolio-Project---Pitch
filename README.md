@@ -85,5 +85,13 @@ open http://localhost/cobill
 
 ---
 
+## Here a beautiful duck
+
+<p align="center">
+  <img src="duck.png" alt="A beautiful duck" width="400">
+</p>
+
+---
+
 *COBILL — Where 1959 meets 1985 meets 2026.*
 *Two languages. Zero dependencies. Perfect invoices.*
