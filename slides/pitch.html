@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBILL — Pitch Presentation</title>
+<style>
+/* ============================================================
+   RESET + BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+    --bg-dark: #0a0b0f;
+    --bg-card: #12131a;
+    --bg-card-alt: #181924;
+    --accent: #33ff33;
+    --accent-dim: #1a8c1a;
+    --accent-glow: rgba(51, 255, 51, 0.15);
+    --text: #e8e8ef;
+    --text-dim: #8888a0;
+    --text-bright: #ffffff;
+    --orange: #ff6b35;
+    --blue: #4da6ff;
+    --purple: #a78bfa;
+    --red: #ff4d6a;
+    --yellow: #fbbf24;
+    --border: rgba(255,255,255,0.06);
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    overflow: hidden;
+}
+
+/* ============================================================
+   SLIDE ENGINE
+   ============================================================ */
+.deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+.slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 100px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.slide.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--text-bright);
+    margin-bottom: 24px;
+}
+
+h1 .accent { color: var(--accent); }
+
+h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-bright);
+    margin-bottom: 40px;
+}
+
+h2 .accent { color: var(--accent); }
+
+h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 16px;
+}
+
+p {
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: var(--text);
+    max-width: 800px;
+}
+
+p.subtitle {
+    font-size: 1.5rem;
+    color: var(--text-dim);
+    font-weight: 300;
+}
+
+p.big {
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.quote {
+    font-size: 1.6rem;
+    font-style: italic;
+    color: var(--text-dim);
+    border-left: 3px solid var(--accent);
+    padding-left: 24px;
+    margin: 30px 0;
+    max-width: 700px;
+}
+
+code, .mono {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+}
+
+.tag {
+    display: inline-block;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   LAYOUT HELPERS
+   ============================================================ */
+.cols {
+    display: grid;
+    gap: 40px;
+    align-items: start;
+}
+
+.cols-2 { grid-template-columns: 1fr 1fr; }
+.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.cols-2-1 { grid-template-columns: 2fr 1fr; }
+.cols-1-2 { grid-template-columns: 1fr 2fr; }
+.cols-3-2 { grid-template-columns: 3fr 2fr; }
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+}
+
+.card.glow {
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.center-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.mt-20 { margin-top: 20px; }
+.mt-40 { margin-top: 40px; }
+.mb-20 { margin-bottom: 20px; }
+.gap-20 { gap: 20px; }
+
+/* ============================================================
+   LISTS
+   ============================================================ */
+ul.clean {
+    list-style: none;
+    padding: 0;
+}
+
+ul.clean li {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    padding: 8px 0;
+    padding-left: 28px;
+    position: relative;
+    color: var(--text);
+}
+
+ul.clean li::before {
+    content: '>';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+th {
+    text-align: left;
+    padding: 12px 16px;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 2px solid var(--accent-dim);
+}
+
+td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+tr:last-child td { border-bottom: none; }
+
+/* ============================================================
+   STAT BLOCKS
+   ============================================================ */
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* ============================================================
+   CODE BLOCK
+   ============================================================ */
+.codeblock {
+    background: #0d0e14;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--accent);
+    white-space: pre;
+    overflow: hidden;
+}
+
+.codeblock .comment { color: #555; }
+.codeblock .keyword { color: var(--blue); }
+.codeblock .string { color: var(--orange); }
+.codeblock .number { color: var(--purple); }
+
+/* ============================================================
+   TERMINAL MOCKUP
+   ============================================================ */
+.terminal {
+    background: #0a0a0a;
+    border: 1px solid #1a8c1a;
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #33ff33;
+    white-space: pre;
+    text-shadow: 0 0 5px rgba(51,255,51,0.3);
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(51,255,51,0.08);
+}
+
+/* ============================================================
+   TIMELINE (SCHEDULE)
+   ============================================================ */
+.timeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 30px;
+}
+
+.timeline-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 20px;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 10px 10px 0 0;
+}
+
+.timeline-item:nth-child(1)::before { background: var(--accent); }
+.timeline-item:nth-child(2)::before { background: var(--blue); }
+.timeline-item:nth-child(3)::before { background: var(--orange); }
+.timeline-item:nth-child(4)::before { background: var(--purple); }
+
+.timeline-week {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+}
+
+.timeline-item:nth-child(1) .timeline-week { color: var(--accent); }
+.timeline-item:nth-child(2) .timeline-week { color: var(--blue); }
+.timeline-item:nth-child(3) .timeline-week { color: var(--orange); }
+.timeline-item:nth-child(4) .timeline-week { color: var(--purple); }
+
+.timeline-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 12px;
+}
+
+.timeline-list {
+    list-style: none;
+    padding: 0;
+}
+
+.timeline-list li {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    padding: 3px 0;
+    padding-left: 16px;
+    position: relative;
+}
+
+.timeline-list li::before {
+    content: '\2022';
+    position: absolute;
+    left: 0;
+    color: var(--text-dim);
+}
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress-bar {
+    background: #1a1a2e;
+    border-radius: 6px;
+    height: 12px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+}
+
+/* ============================================================
+   VERSUS
+   ============================================================ */
+.vs-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-dim);
+    padding: 20px 0;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+.nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 40px;
+    background: rgba(10,11,15,0.9);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+}
+
+.nav-bar button {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nav-bar button:hover {
+    border-color: var(--accent-dim);
+    color: var(--accent);
+}
+
+.slide-counter {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+
+.progress-track {
+    flex: 1;
+    max-width: 200px;
+    height: 3px;
+    background: var(--bg-card);
+    border-radius: 3px;
+    margin: 0 20px;
+    overflow: hidden;
+}
+
+.progress-indicator {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+/* ============================================================
+   DECORATIVE
+   ============================================================ */
+.bg-glow {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.07;
+    pointer-events: none;
+}
+
+.bg-glow.green { background: #33ff33; }
+.bg-glow.blue { background: #4da6ff; }
+.bg-glow.purple { background: #a78bfa; }
+
+.slide-number {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    opacity: 0.4;
+}
+</style>
+</head>
+
+<body>
+<div class="deck" id="deck">
+
+<!-- ============================================================
+     SLIDE 1 — TITLE
+     ============================================================ -->
+<div class="slide active" id="slide-1">
+    <div class="bg-glow green" style="top:-200px;right:-100px;"></div>
+    <div class="center-content" style="height:100%;justify-content:center;">
+        <div class="tag mb-20">Webstack Portfolio Project</div>
+        <h1 style="font-size:5rem;margin-bottom:16px;">
+            CO<span class="accent">BILL</span>
+        </h1>
+        <p class="subtitle" style="max-width:600px;">
+            Invoicing powered by the language of banks
+            and the language of printers.
+        </p>
+        <div style="margin-top:50px;display:flex;gap:30px;align-items:center;">
+            <span class="mono" style="font-size:1.1rem;color:var(--text-dim);">COBOL</span>
+            <span style="color:var(--accent);">+</span>
+            <span class="mono" style="font-size:1.1rem;color:var(--text-dim);">PostScript</span>
+            <span style="color:var(--accent);">+</span>
+            <span class="mono" style="font-size:1.1rem;color:var(--text-dim);">HTMX</span>
+        </div>
+        <p style="margin-top:60px;font-size:1rem;color:var(--text-dim);">
+            Fr&eacute;d&eacute;ric Bourouliou &mdash; Solo Developer
+        </p>
+    </div>
+    <span class="slide-number">01</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 2 — TEAM
+     ============================================================ -->
+<div class="slide" id="slide-2">
+    <div class="bg-glow blue" style="bottom:-200px;left:-100px;"></div>
+    <h3>Team</h3>
+    <h2>Solo <span class="accent">Developer</span></h2>
+
+    <div class="cols cols-2" style="max-width:900px;">
+        <div class="card glow">
+            <h3 style="margin-bottom:20px;">Fr&eacute;d&eacute;ric Bourouliou</h3>
+            <ul class="clean">
+                <li>Full-Stack Development</li>
+                <li>COBOL Backend &amp; Financial Engine</li>
+                <li>PostScript PDF Generation</li>
+                <li>HTMX Frontend &amp; UI Design</li>
+                <li>AWS Deployment &amp; DevOps</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom:20px;">Why Solo?</h3>
+            <p style="font-size:1rem;">
+                This project explores niche technologies (COBOL, PostScript)
+                with very few online resources. A solo approach allows
+                deep focus and end-to-end ownership of every layer.
+            </p>
+        </div>
+    </div>
+    <span class="slide-number">02</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 3 — THE PROBLEM
+     ============================================================ -->
+<div class="slide" id="slide-3">
+    <div class="bg-glow purple" style="top:-150px;left:-150px;"></div>
+    <h3>The Problem</h3>
+    <h2>2 million freelancers.<br><span class="accent">One broken workflow.</span></h2>
+
+    <div class="cols cols-4 mt-20">
+        <div class="stat">
+            <div class="stat-value">2M+</div>
+            <div class="stat-label">Auto-entrepreneurs<br>in France</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" style="color:var(--orange);">22%</div>
+            <div class="stat-label">URSSAF rate<br>often miscalculated</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" style="color:var(--red);">&euro;36.8K</div>
+            <div class="stat-label">VAT threshold<br>easy to miss</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" style="color:var(--purple);">&euro;15+</div>
+            <div class="stat-label">per month for<br>bloated SaaS tools</div>
+        </div>
+    </div>
+
+    <div class="quote mt-40">
+        Most invoicing apps ship megabytes of JavaScript
+        for what is fundamentally an arithmetic problem.
+    </div>
+    <span class="slide-number">03</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 4 — THE REAL PROBLEM
+     ============================================================ -->
+<div class="slide" id="slide-4">
+    <h3>The Core Issue</h3>
+    <h2>Your code <span class="accent">can't count.</span></h2>
+
+    <div class="cols cols-2" style="max-width:1000px;">
+        <div class="card" style="border-color:var(--red);">
+            <h3 style="color:var(--red);margin-bottom:20px;">JavaScript / Python</h3>
+            <div class="codeblock">
+<span class="comment">// Every modern language does this:</span>
+0.1 + 0.2 = <span class="number">0.30000000000000004</span>
+1.1 * 1.1 = <span class="number">1.2100000000000002</span>
+0.3 - 0.1 = <span class="number">0.19999999999999998</span>
+
+<span class="comment">// Floating-point arithmetic.</span>
+<span class="comment">// Silent rounding errors on your money.</span></div>
+        </div>
+        <div class="card glow">
+            <h3 style="margin-bottom:20px;">COBOL</h3>
+            <div class="codeblock">
+<span class="comment">*&gt; COBOL since 1959:</span>
+<span class="keyword">01</span> AMOUNT  <span class="keyword">PIC</span> <span class="number">9(5)V99</span>.
+<span class="comment">*&gt; 5 digits + 2 exact decimals</span>
+
+0.1 + 0.2 = <span class="number">0.30</span>
+1.1 * 1.1 = <span class="number">1.21</span>
+0.3 - 0.1 = <span class="number">0.20</span>
+
+<span class="comment">*&gt; Fixed-point. Always exact.</span></div>
+        </div>
+    </div>
+    <span class="slide-number">04</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 5 — THE SOLUTION
+     ============================================================ -->
+<div class="slide" id="slide-5">
+    <div class="bg-glow green" style="bottom:-200px;right:-100px;"></div>
+    <h3>Description</h3>
+    <h2>COBILL &mdash; <span class="accent">The Solution</span></h2>
+
+    <p class="big" style="margin-bottom:40px;">
+        A web-based invoicing app for French freelancers,
+        built with the two most reliable technologies for the job:
+    </p>
+
+    <div class="cols cols-3" style="max-width:1100px;">
+        <div class="card">
+            <div style="font-size:2rem;margin-bottom:12px;">&#x1f3e6;</div>
+            <h3>COBOL <span style="color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0;">(1959)</span></h3>
+            <p style="font-size:1rem;">
+                The language of banks. Handles all financial calculations
+                with native decimal arithmetic. Zero rounding errors.
+            </p>
+        </div>
+        <div class="card">
+            <div style="font-size:2rem;margin-bottom:12px;">&#x1f5a8;</div>
+            <h3>PostScript <span style="color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0;">(1985)</span></h3>
+            <p style="font-size:1rem;">
+                The language of printers. Generates pixel-perfect
+                PDF invoices. No library, no dependency.
+            </p>
+        </div>
+        <div class="card">
+            <div style="font-size:2rem;margin-bottom:12px;">&#x26a1;</div>
+            <h3>HTMX <span style="color:var(--text-dim);font-weight:400;text-transform:none;letter-spacing:0;">(2020)</span></h3>
+            <p style="font-size:1rem;">
+                14 KB of JavaScript. Dynamic UI without React, Vue,
+                or any framework. Zero build step.
+            </p>
+        </div>
+    </div>
+
+    <div class="quote mt-40">
+        "Your bank runs on COBOL. Your printer runs on PostScript.
+        Your invoicing app should too."
+    </div>
+    <span class="slide-number">05</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 6 — TECHNOLOGIES USED
+     ============================================================ -->
+<div class="slide" id="slide-6">
+    <h3>Technologies Used</h3>
+    <h2>The <span class="accent">Stack</span></h2>
+
+    <div class="cols cols-2" style="max-width:1100px;">
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Layer</th>
+                        <th>Technology</th>
+                        <th style="text-align:center;">Year</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Financial Engine</td>
+                        <td><strong class="mono">GnuCOBOL 3.x</strong></td>
+                        <td style="text-align:center;">1959</td>
+                    </tr>
+                    <tr>
+                        <td>PDF Generation</td>
+                        <td><strong class="mono">PostScript + Ghostscript</strong></td>
+                        <td style="text-align:center;">1985</td>
+                    </tr>
+                    <tr>
+                        <td>Web Server</td>
+                        <td><strong class="mono">Apache 2.4 + mod_cgi</strong></td>
+                        <td style="text-align:center;">1995</td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td>
+                        <td><strong class="mono">HTML5 + HTMX 2.x + CSS3</strong></td>
+                        <td style="text-align:center;">2020</td>
+                    </tr>
+                    <tr>
+                        <td>Data Storage</td>
+                        <td><strong class="mono">COBOL ISAM files</strong></td>
+                        <td style="text-align:center;">1959</td>
+                    </tr>
+                    <tr>
+                        <td>Hosting</td>
+                        <td><strong class="mono">AWS EC2</strong> (t3.micro)</td>
+                        <td style="text-align:center;">2006</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <div class="cols cols-2 gap-20">
+                <div class="stat">
+                    <div class="stat-value">14 KB</div>
+                    <div class="stat-label">Total JavaScript</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">npm packages</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color:var(--blue);">0</div>
+                    <div class="stat-label">External APIs</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" style="color:var(--purple);">~$2</div>
+                    <div class="stat-label">/month (Free Tier)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">06</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 7 — ARCHITECTURE
+     ============================================================ -->
+<div class="slide" id="slide-7">
+    <h3>Architecture</h3>
+    <h2>How It <span class="accent">Works</span></h2>
+
+    <div class="cols cols-3-2" style="max-width:1200px;">
+        <div class="terminal" style="font-size:0.7rem;line-height:1.55;">
+  BROWSER                          AWS EC2 (Ubuntu)
+ +-----------+                    +----------------------------+
+ | HTML+HTMX |  HTTP POST/GET    | Apache 2.4 + mod_cgi      |
+ | + CSS     | ----------------&gt; |                            |
+ | (14 KB)   | &lt;-- HTML fragment  |   +--------------------+   |
+ +-----------+                    |   | COBOL PROGRAMS       |   |
+                                  |   |                      |   |
+                                  |   | invoice.cob          |   |
+                                  |   |  &gt; PIC 9(5)V99      |   |
+                                  |   |  &gt; HT / TVA / TTC   |   |
+                                  |   |                      |   |
+                                  |   | pdf-gen.cob          |   |
+                                  |   |  &gt; Write .ps file   |   |
+                                  |   |  &gt; Call Ghostscript  |   |
+                                  |   |  &gt; Return PDF link  |   |
+                                  |   +--------------------+   |
+                                  |              |              |
+                                  |   +----------v---------+   |
+                                  |   | ISAM    | PDF/     |   |
+                                  |   | .dat    | .ps .pdf |   |
+                                  |   +---------+----------+   |
+                                  +----------------------------+</div>
+        <div>
+            <h3>Data Flow</h3>
+            <ul class="clean" style="font-size:1rem;">
+                <li>User fills invoice form</li>
+                <li>HTMX sends POST to CGI</li>
+                <li>Apache invokes COBOL binary</li>
+                <li>COBOL computes exact totals</li>
+                <li>COBOL writes PostScript file</li>
+                <li>Ghostscript converts to PDF</li>
+                <li>HTML fragment returned to browser</li>
+                <li>HTMX injects result &mdash; no reload</li>
+            </ul>
+            <div class="card glow mt-20" style="padding:16px 20px;">
+                <p style="font-size:0.95rem;color:var(--accent);">
+                    No JSON. No API layer. No virtual DOM.<br>
+                    The server renders HTML. Period.
+                </p>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">07</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 8 — THIRD-PARTY SERVICES
+     ============================================================ -->
+<div class="slide" id="slide-8">
+    <h3>Third-Party Services</h3>
+    <h2>Minimal <span class="accent">Dependencies</span></h2>
+
+    <div class="cols cols-2" style="max-width:1100px;">
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Purpose</th>
+                        <th>Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>AWS EC2</strong></td>
+                        <td>Production server (t3.micro)</td>
+                        <td style="color:var(--accent);">Free Tier</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AWS Route 53</strong></td>
+                        <td>DNS management</td>
+                        <td>$0.50/mo</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AWS ACM</strong></td>
+                        <td>SSL/TLS certificate</td>
+                        <td style="color:var(--accent);">Free</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GnuCOBOL</strong></td>
+                        <td>COBOL compiler</td>
+                        <td style="color:var(--accent);">Free (GPL)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ghostscript</strong></td>
+                        <td>PS &rarr; PDF conversion</td>
+                        <td style="color:var(--accent);">Free (AGPL)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GitHub</strong></td>
+                        <td>Version control</td>
+                        <td style="color:var(--accent);">Free</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card glow center-content" style="justify-content:center;padding:40px;">
+            <div class="stat-value" style="font-size:2.5rem;">~$2/mo</div>
+            <div class="stat-label" style="margin-top:8px;">Total cost (year 1)</div>
+            <div style="margin-top:24px;color:var(--text-dim);font-size:0.95rem;">
+                No external APIs<br>
+                No third-party SaaS<br>
+                All computation is local<br>
+                GDPR-compliant by default
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">08</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 9 — LEARNING OBJECTIVES
+     ============================================================ -->
+<div class="slide" id="slide-9">
+    <h3>Learning Objectives</h3>
+    <h2>Skills <span class="accent">Demonstrated</span></h2>
+
+    <div class="cols cols-3" style="max-width:1100px;">
+        <div class="card">
+            <h3 style="color:var(--blue);">Full-Stack Web Dev</h3>
+            <ul class="clean" style="font-size:0.95rem;">
+                <li>COBOL server-side rendering</li>
+                <li>HTMX dynamic frontend</li>
+                <li>PostScript document engine</li>
+                <li>ISAM data persistence</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3 style="color:var(--orange);">HTTP &amp; Protocol</h3>
+            <ul class="clean" style="font-size:0.95rem;">
+                <li>CGI request/response cycle</li>
+                <li>HTTP methods &amp; headers</li>
+                <li>Cookie-based sessions</li>
+                <li>URL encoding / decoding</li>
+            </ul>
+        </div>
+        <div class="card">
+            <h3 style="color:var(--purple);">Deployment</h3>
+            <ul class="clean" style="font-size:0.95rem;">
+                <li>AWS EC2 provisioning</li>
+                <li>Apache configuration</li>
+                <li>SSL/TLS setup</li>
+                <li>Build automation (Make)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mt-40" style="max-width:1100px;text-align:center;padding:20px;">
+        <p style="font-size:1.1rem;color:var(--text);">
+            <strong style="color:var(--accent);">Core skill demonstrated:</strong>
+            picking up unknown technologies under time pressure
+            and delivering a production-grade result.
+        </p>
+    </div>
+    <span class="slide-number">09</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 10 — CHALLENGES
+     ============================================================ -->
+<div class="slide" id="slide-10">
+    <h3>Challenges Identified</h3>
+    <h2>Risks &amp; <span class="accent">Mitigations</span></h2>
+
+    <div style="max-width:1100px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Challenge</th>
+                    <th style="text-align:center;">Risk</th>
+                    <th>Mitigation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>COBOL + CGI integration</strong></td>
+                    <td style="text-align:center;"><span style="color:var(--yellow);">Medium</span></td>
+                    <td><code>ACCEPT FROM ENVIRONMENT</code> + <code>DISPLAY</code> &mdash; prototype on Day 1-2</td>
+                </tr>
+                <tr>
+                    <td><strong>Form data parsing in COBOL</strong></td>
+                    <td style="text-align:center;"><span style="color:var(--yellow);">Medium</span></td>
+                    <td>Reusable <code>cgi-utils.cob</code> module (~50 lines), written once</td>
+                </tr>
+                <tr>
+                    <td><strong>PostScript learning curve</strong></td>
+                    <td style="text-align:center;"><span style="color:var(--accent);">Low</span></td>
+                    <td>Only ~15 commands needed. Invoice template is ~150 lines</td>
+                </tr>
+                <tr>
+                    <td><strong>COBOL calling Ghostscript</strong></td>
+                    <td style="text-align:center;"><span style="color:var(--accent);">Low</span></td>
+                    <td><code>CALL "SYSTEM"</code> &mdash; one line of COBOL</td>
+                </tr>
+                <tr>
+                    <td><strong>Session management</strong></td>
+                    <td style="text-align:center;"><span style="color:var(--yellow);">Medium</span></td>
+                    <td>Cookie + ISAM session store. Deferred to Week 3</td>
+                </tr>
+                <tr>
+                    <td><strong>Dev environment (macOS &rarr; Linux)</strong></td>
+                    <td style="text-align:center;"><span style="color:var(--accent);">Low</span></td>
+                    <td>Develop directly on EC2 via SSH + VS Code Remote</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="card mt-20" style="padding:16px 20px;border-color:var(--accent-dim);">
+            <p style="font-size:0.95rem;">
+                <strong style="color:var(--accent);">Fallback:</strong>
+                If CGI proves problematic, a thin Python wrapper invokes COBOL binaries.
+                The COBOL calculation engine stays intact regardless.
+            </p>
+        </div>
+    </div>
+    <span class="slide-number">10</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 11 — SCHEDULE
+     ============================================================ -->
+<div class="slide" id="slide-11">
+    <h3>Schedule</h3>
+    <h2><span class="accent">27 Days</span> &mdash; 4 Weeks</h2>
+
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-week">Week 1 &mdash; Days 1-7</div>
+            <div class="timeline-title">Foundations</div>
+            <ul class="timeline-list">
+                <li>Dev environment setup</li>
+                <li>COBOL CGI proof of concept</li>
+                <li>HTMX integration</li>
+                <li>ISAM data model</li>
+                <li>Client CRUD</li>
+                <li>Invoice creation + calc</li>
+                <li>Invoice listing</li>
+            </ul>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-week">Week 2 &mdash; Days 8-14</div>
+            <div class="timeline-title">PDF Engine</div>
+            <ul class="timeline-list">
+                <li>PostScript crash course</li>
+                <li>Dynamic PDF from COBOL</li>
+                <li>End-to-end PDF flow</li>
+                <li>Invoice numbering</li>
+                <li>Invoice status workflow</li>
+                <li>Retro terminal CSS theme</li>
+                <li>Testing + bug fixes</li>
+            </ul>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-week">Week 3 &mdash; Days 15-21</div>
+            <div class="timeline-title">Business Logic</div>
+            <ul class="timeline-list">
+                <li>URSSAF calculator</li>
+                <li>VAT threshold tracker</li>
+                <li>Revenue dashboard</li>
+                <li>Modern theme + toggle</li>
+                <li>Responsive design</li>
+                <li>Authentication</li>
+                <li>Testing + bug fixes</li>
+            </ul>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-week">Week 4 &mdash; Days 22-27</div>
+            <div class="timeline-title">Ship It</div>
+            <ul class="timeline-list">
+                <li>Deploy on AWS EC2</li>
+                <li>Landing page</li>
+                <li>E2E testing on prod</li>
+                <li>README + docs</li>
+                <li>Pitch slides</li>
+                <li>Rehearse pitch</li>
+            </ul>
+        </div>
+    </div>
+
+    <div style="margin-top:24px;display:flex;gap:30px;align-items:center;">
+        <span style="color:var(--text-dim);font-size:0.9rem;">Critical risks front-loaded:</span>
+        <span style="color:var(--accent);font-size:0.85rem;font-family:'JetBrains Mono',monospace;">
+            Day 2: CGI works &rarr; Day 10: PDF works &rarr; Day 14: MVP complete
+        </span>
+    </div>
+    <span class="slide-number">11</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 12 — MOCKUPS
+     ============================================================ -->
+<div class="slide" id="slide-12">
+    <h3>Mock-ups</h3>
+    <h2>Retro Terminal <span class="accent">Theme</span></h2>
+
+    <div class="cols cols-2" style="max-width:1200px;">
+        <div class="terminal" style="font-size:0.62rem;">
+ COBILL v1.0          INVOICE MANAGEMENT SYSTEM
+ ══════════════════════════════════════════════
+
+ [F1] NEW INVOICE  [F2] CLIENTS  [F3] DASHBOARD
+
+ CREATE NEW INVOICE
+ ─────────────────
+ CLIENT......: [Dupont SARL___________]
+ DATE........: [2026-03-25]
+
+ LINE ITEMS:
+ ┌─────┬──────────────────┬──────┬───────┬────────┐
+ │  #  │ DESCRIPTION      │ QTY  │ RATE  │ TOTAL  │
+ ├─────┼──────────────────┼──────┼───────┼────────┤
+ │  1  │ Web development  │ 5.00 │300.00 │1500.00 │
+ │  2  │ UI/UX consulting │ 2.00 │250.00 │ 500.00 │
+ ├─────┼──────────────────┼──────┼───────┼────────┤
+ │     │                  │      │  H.T. │2000.00 │
+ │     │                  │      │  TVA  │ 400.00 │
+ │     │                  │      │  TTC  │2400.00 │
+ └─────┴──────────────────┴──────┴───────┴────────┘
+ URSSAF (22%).: 440.00 EUR
+ NET REVENUE..: 1,560.00 EUR
+
+ [GENERATE PDF]  [SAVE DRAFT]  [CANCEL]
+ ──────────────────────────────────────────────
+ VAT: ████████████░░░░░░ 67% (24,560/36,800)</div>
+
+        <div class="terminal" style="font-size:0.62rem;">
+ COBILL v1.0              REVENUE DASHBOARD
+ ══════════════════════════════════════════════
+
+ YEAR 2026             ACTIVITY: CONSULTING (BNC)
+
+ MONTHLY REVENUE (EUR H.T.)
+
+ JAN │ ████████████████████ 4,200
+ FEB │ ██████████████████████████ 5,800
+ MAR │ ████████████████ 3,400
+
+ YEAR TO DATE
+ ┌──────────────────────┬────────────┐
+ │ Total H.T.           │  13,400.00 │
+ │ Total TVA            │   2,680.00 │
+ │ Total TTC            │  16,080.00 │
+ │ URSSAF (22%)         │   2,948.00 │
+ │ Net revenue          │  10,452.00 │
+ └──────────────────────┴────────────┘
+
+ VAT THRESHOLD
+ ████████████░░░░░░░░░░░░ 36% (13,400/36,800)
+ Estimated crossing: AUGUST 2026
+
+ UNPAID INVOICES: 3
+ Total outstanding: 9,600.00 EUR</div>
+    </div>
+
+    <p style="margin-top:20px;font-size:0.95rem;color:var(--text-dim);">
+        IBM 3270 green-on-black aesthetic &mdash; plus a modern clean theme with one-click toggle.
+    </p>
+    <span class="slide-number">12</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 13 — COMMERCIAL ANGLE
+     ============================================================ -->
+<div class="slide" id="slide-13">
+    <div class="bg-glow green" style="top:-200px;left:-100px;"></div>
+    <h3>Commercial Angle</h3>
+    <h2>A Real <span class="accent">Product</span></h2>
+
+    <div class="cols cols-2" style="max-width:1100px;">
+        <div>
+            <h3 style="color:var(--blue);margin-bottom:16px;">Pricing Model (Freemium)</h3>
+            <table>
+                <thead>
+                    <tr><th>Plan</th><th>Price</th><th>Includes</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Free</strong></td>
+                        <td style="color:var(--accent);">&euro;0</td>
+                        <td>5 invoices/mo, 1 client</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pro</strong></td>
+                        <td>&euro;5/mo</td>
+                        <td>Unlimited, URSSAF, branding</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Business</strong></td>
+                        <td>&euro;15/mo</td>
+                        <td>Multi-user, API, exports</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="mt-40">
+                <h3 style="color:var(--orange);margin-bottom:16px;">Differentiator</h3>
+                <p style="font-size:1rem;">
+                    No competitor uses COBOL for decimal-exact
+                    calculations or PostScript for native PDF.
+                    The marketing angle is unique and unforgettable.
+                </p>
+            </div>
+        </div>
+
+        <div>
+            <h3 style="color:var(--purple);margin-bottom:16px;">vs. Competition</h3>
+            <table>
+                <thead>
+                    <tr><th></th><th>COBILL</th><th>Others</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Precision</td>
+                        <td style="color:var(--accent);">Exact</td>
+                        <td style="color:var(--red);">Float</td>
+                    </tr>
+                    <tr>
+                        <td>PDF engine</td>
+                        <td style="color:var(--accent);">Native</td>
+                        <td style="color:var(--text-dim);">Library</td>
+                    </tr>
+                    <tr>
+                        <td>Frontend JS</td>
+                        <td style="color:var(--accent);">14 KB</td>
+                        <td style="color:var(--text-dim);">200+ KB</td>
+                    </tr>
+                    <tr>
+                        <td>npm pkgs</td>
+                        <td style="color:var(--accent);">0</td>
+                        <td style="color:var(--text-dim);">500+</td>
+                    </tr>
+                    <tr>
+                        <td>Infra cost</td>
+                        <td style="color:var(--accent);">$2/mo</td>
+                        <td style="color:var(--text-dim);">$15+/mo</td>
+                    </tr>
+                    <tr>
+                        <td>Self-host</td>
+                        <td style="color:var(--accent);">Yes</td>
+                        <td style="color:var(--red);">Rarely</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <span class="slide-number">13</span>
+</div>
+
+<!-- ============================================================
+     SLIDE 14 — CLOSING
+     ============================================================ -->
+<div class="slide" id="slide-14">
+    <div class="bg-glow green" style="top:-100px;right:-100px;"></div>
+    <div class="bg-glow blue" style="bottom:-200px;left:-100px;"></div>
+    <div class="center-content" style="height:100%;justify-content:center;">
+        <h1 style="font-size:4rem;margin-bottom:16px;">
+            CO<span class="accent">BILL</span>
+        </h1>
+        <p class="subtitle" style="max-width:650px;margin-bottom:50px;">
+            Where 1959 meets 1985 meets 2026.<br>
+            Two languages. Zero dependencies. Perfect invoices.
+        </p>
+
+        <div style="display:flex;gap:60px;margin-bottom:60px;">
+            <div class="stat">
+                <div class="stat-value" style="font-size:2rem;">COBOL</div>
+                <div class="stat-label">calculates</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" style="font-size:2rem;color:var(--blue);">PostScript</div>
+                <div class="stat-label">renders</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" style="font-size:2rem;color:var(--purple);">HTMX</div>
+                <div class="stat-label">delivers</div>
+            </div>
+        </div>
+
+        <div class="quote" style="border-left-color:var(--accent);text-align:left;">
+            "Built with the same technology that processes
+            95% of the world's financial transactions.
+            Not because it's trendy &mdash; because it's right."
+        </div>
+
+        <p style="margin-top:50px;font-size:1.1rem;color:var(--text-dim);">
+            Thank you. Questions?
+        </p>
+        <p style="margin-top:10px;font-size:0.9rem;color:var(--text-dim);">
+            Fr&eacute;d&eacute;ric Bourouliou
+        </p>
+    </div>
+    <span class="slide-number">14</span>
+</div>
+
+</div><!-- /deck -->
+
+<!-- ============================================================
+     NAVIGATION BAR
+     ============================================================ -->
+<div class="nav-bar">
+    <button onclick="prevSlide()">&larr; Prev</button>
+    <div style="display:flex;align-items:center;gap:12px;">
+        <span class="slide-counter" id="counter">01 / 14</span>
+        <div class="progress-track">
+            <div class="progress-indicator" id="progress" style="width:7.14%;"></div>
+        </div>
+    </div>
+    <button onclick="nextSlide()">Next &rarr;</button>
+</div>
+
+<!-- ============================================================
+     SLIDE ENGINE JS
+     ============================================================ -->
+<script>
+(function() {
+    var current = 0;
+    var slides = document.querySelectorAll('.slide');
+    var total = slides.length;
+    var counter = document.getElementById('counter');
+    var progress = document.getElementById('progress');
+
+    function show(idx) {
+        slides[current].classList.remove('active');
+        current = idx;
+        if (current < 0) current = 0;
+        if (current >= total) current = total - 1;
+        slides[current].classList.add('active');
+        counter.textContent = String(current + 1).padStart(2, '0') + ' / ' + total;
+        progress.style.width = ((current + 1) / total * 100) + '%';
+    }
+
+    window.nextSlide = function() { show(current + 1); };
+    window.prevSlide = function() { show(current - 1); };
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            show(current + 1);
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+            e.preventDefault();
+            show(current - 1);
+        }
+        if (e.key === 'Home') { e.preventDefault(); show(0); }
+        if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+    });
+
+    var touchStartX = 0;
+    document.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+    document.addEventListener('touchend', function(e) {
+        var diff = e.changedTouches[0].screenX - touchStartX;
+        if (diff < -50) show(current + 1);
+        if (diff > 50) show(current - 1);
+    });
+})();
+</script>
+
+</body>
+</html>
