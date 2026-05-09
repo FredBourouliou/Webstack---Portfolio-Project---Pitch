@@ -1,0 +1,63 @@
+% ---- Reusable helpers --------------------------------------------------
+
+% Set a font: /face size selectFont
+/selectFont {
+    exch findfont exch scalefont setfont
+} bind def
+
+% Draw text at (x, y):  x y (string) drawAt
+/drawAt {
+    8 dict begin
+        /str exch def
+        /y   exch def
+        /x   exch def
+        x y moveto
+        str show
+    end
+} bind def
+
+% Right-align text so its right edge sits at x:  x y (string) drawRight
+/drawRight {
+    8 dict begin
+        /str exch def
+        /y   exch def
+        /x   exch def
+        /w str stringwidth pop def
+        x w sub  y  str  drawAt
+    end
+} bind def
+
+% Horizontal rule:  x1 y x2 widthPt grayLevel hr
+/hr {
+    gsave
+        setgray setlinewidth
+        8 dict begin
+            /x2 exch def
+            /y  exch def
+            /x1 exch def
+            newpath
+            x1 y moveto
+            x2 y lineto
+            stroke
+        end
+    grestore
+} bind def
+
+% Filled rectangle:  x y width height grayLevel rowBg
+/rowBg {
+    gsave
+        setgray
+        8 dict begin
+            /h exch def
+            /w exch def
+            /y exch def
+            /x exch def
+            newpath
+            x y moveto
+            w 0 rlineto
+            0 h rlineto
+            w neg 0 rlineto
+            closepath fill
+        end
+    grestore
+} bind def

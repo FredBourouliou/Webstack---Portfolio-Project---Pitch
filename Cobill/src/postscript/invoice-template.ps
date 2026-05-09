@@ -1,0 +1,238 @@
+%!PS-Adobe-3.0
+%%Title: Le Cobol Invoice 2026-0001
+%%Creator: Le Cobol — COBOL-Powered Invoicing
+%%CreationDate: 2026-05-01
+%%BoundingBox: 0 0 595 842
+%%DocumentMedia: A4 595 842 80 white ()
+%%Pages: 1
+%%LanguageLevel: 2
+%%EndComments
+
+%%BeginProlog
+
+% ---- Reusable helpers ----------------------------------------------------
+
+% Set a font: /face size selectFont
+/selectFont {
+    exch findfont exch scalefont setfont
+} bind def
+
+% Draw text at (x, y):  x y (string) drawAt
+/drawAt {
+    8 dict begin
+        /str exch def
+        /y   exch def
+        /x   exch def
+        x y moveto
+        str show
+    end
+} bind def
+
+% Right-align text so its right edge sits at x:  x y (string) drawRight
+/drawRight {
+    8 dict begin
+        /str exch def
+        /y   exch def
+        /x   exch def
+        /w str stringwidth pop def
+        x w sub  y  str  drawAt
+    end
+} bind def
+
+% Horizontal rule: x1 y x2 widthPt grayLevel hr
+% gsave/grestore keep the gray + linewidth local to this op.
+/hr {
+    gsave
+        setgray setlinewidth
+        8 dict begin
+            /x2 exch def
+            /y  exch def
+            /x1 exch def
+            newpath
+            x1 y moveto
+            x2 y lineto
+            stroke
+        end
+    grestore
+} bind def
+
+% Filled rectangle: x y width height grayLevel rowBg
+/rowBg {
+    gsave
+        setgray
+        8 dict begin
+            /h exch def
+            /w exch def
+            /y exch def
+            /x exch def
+            newpath
+            x y moveto
+            w 0 rlineto
+            0 h rlineto
+            w neg 0 rlineto
+            closepath fill
+        end
+    grestore
+} bind def
+
+%%EndProlog
+
+%%Page: 1 1
+%%BeginPageSetup
+% Page size already set via DocumentMedia.
+%%EndPageSetup
+
+% =========================================================================
+% HEADER — sender brand + invoice number
+% =========================================================================
+
+/Helvetica-Bold 22 selectFont
+0.10 0.20 0.50 setrgbcolor
+72 780 (LE COBOL) drawAt
+
+/Helvetica 9 selectFont
+0.50 setgray
+72 766 (COBOL-Powered Invoicing) drawAt
+
+/Helvetica-Bold 18 selectFont
+0 setgray
+523 780 (FACTURE) drawRight
+
+/Helvetica 11 selectFont
+523 763 (No 2026-0001) drawRight
+
+72 752 523 0.5 0.7 hr
+
+% =========================================================================
+% FROM / TO — sender block (left) + client block (right)
+% =========================================================================
+
+0 setgray
+/Helvetica-Bold 9 selectFont
+72  730 (DE) drawAt
+350 730 (CLIENT) drawAt
+
+/Helvetica 10 selectFont
+
+% Sender (left column)
+72 715 (Votre raison sociale) drawAt
+72 702 (Votre adresse) drawAt
+72 689 (Code postal Ville, France) drawAt
+72 676 (SIRET: 000 000 000 00000) drawAt
+
+% Client (right column)
+350 715 (Dupont SARL) drawAt
+350 702 (45 Avenue des Champs-Elysees) drawAt
+350 689 (75008 Paris, France) drawAt
+350 676 (SIRET: 987 654 321 00034) drawAt
+
+% Dates row
+0.40 setgray
+/Helvetica 9 selectFont
+72 650 (Date d'emission : 01/05/2026) drawAt
+72 638 (Echeance        : 31/05/2026) drawAt
+
+% =========================================================================
+% LINE ITEMS TABLE
+% =========================================================================
+
+% Table header background (light gray strip)
+72 612 451 18 0.94 rowBg
+
+0 setgray
+/Helvetica-Bold 10 selectFont
+78  617 (Description) drawAt
+350 617 (Qte)         drawAt
+410 617 (PU HT)       drawAt
+523 617 (Total HT)    drawRight
+
+% Header underline
+72 610 523 0.4 0.6 hr
+
+/Helvetica 10 selectFont
+
+% --- Row 1 -----------------------------------------------------------------
+0 setgray
+78  590 (Web development) drawAt
+
+/Helvetica 10 selectFont
+350 590 (5,00)         drawAt
+410 590 (300,00)       drawAt
+523 590 (1 500,00)     drawRight
+
+72 580 523 0.2 0.92 hr
+
+% --- Row 2 -----------------------------------------------------------------
+78  565 (UI/UX consulting) drawAt
+350 565 (2,00)            drawAt
+410 565 (250,00)          drawAt
+523 565 (500,00)          drawRight
+
+72 555 523 0.2 0.92 hr
+
+% =========================================================================
+% TOTALS BLOCK (right-aligned)
+% =========================================================================
+
+/Helvetica 10 selectFont
+0 setgray
+
+380 525 (Total H.T.)              drawAt
+523 525 (2 000,00 EUR)            drawRight
+
+380 510 (TVA \(20%\))             drawAt
+523 510 (   400,00 EUR)           drawRight
+
+% Heavy rule above TTC
+380 502 523 0.6 0.3 hr
+
+/Helvetica-Bold 11 selectFont
+380 487 (Total T.T.C.)            drawAt
+523 487 (2 400,00 EUR)            drawRight
+
+% Lighter footer rule
+380 478 523 0.3 0.5 hr
+
+/Helvetica 9 selectFont
+0.4 setgray
+380 462 (URSSAF \(22%\))          drawAt
+523 462 (   440,00 EUR)           drawRight
+
+380 449 (Net revenue)             drawAt
+523 449 (1 560,00 EUR)            drawRight
+
+% =========================================================================
+% LEGAL MENTIONS (mandatory in France)
+% =========================================================================
+
+0 setgray
+/Helvetica-Bold 9 selectFont
+72 405 (MENTIONS LEGALES) drawAt
+
+/Helvetica 8 selectFont
+0.30 setgray
+72 388 (Paiement par virement bancaire sous 30 jours.) drawAt
+72 376 (IBAN : FR76 XXXX XXXX XXXX XXXX XXXX XXX) drawAt
+72 364 (BIC  : XXXXXXXX) drawAt
+
+72 344 (En cas de retard de paiement, une penalite de 3 fois le taux d'interet legal sera) drawAt
+72 332 (appliquee \(art. L441-10 du Code de commerce\). Indemnite forfaitaire de) drawAt
+72 320 (recouvrement : 40,00 EUR \(art. D441-5 du Code de commerce\).) drawAt
+
+72 296 (Pas d'escompte pour paiement anticipe.) drawAt
+
+% =========================================================================
+% FOOTER
+% =========================================================================
+
+72 70 523 0.3 0.5 hr
+
+/Helvetica 8 selectFont
+0.55 setgray
+72  56 (Powered by LE COBOL  -  COBOL + PostScript + HTMX  -  lecobol.com) drawAt
+523 56 (Page 1 / 1) drawRight
+
+showpage
+
+%%Trailer
+%%EOF

@@ -114,20 +114,20 @@ curl -o htmx.min.js https://unpkg.com/htmx.org@2/dist/htmx.min.js
 
 ## External APIs
 
-**None.**
+Une seule, optionnelle : **`recherche-entreprises.api.gouv.fr`** (ex-API SIRENE) pour l'enrichissement client à partir d'un SIRET.
 
-COBILL has zero external API dependencies. All computation happens locally:
-- Financial calculations → COBOL
-- PDF generation → PostScript + Ghostscript
-- Data storage → COBOL ISAM files
-- Web serving → Apache
+- API publique gouvernementale française, pas de clé d'authentification, pas de limite contractuelle.
+- Appelée depuis le backend par `bin/sirene` (curl + jq), résultat injecté dans le formulaire client via HTMX out-of-band swap.
+- Si l'API tombe ou que le SIRET n'existe pas, l'utilisateur voit un message d'erreur et peut continuer à saisir manuellement — aucune dépendance bloquante.
+- Aucune donnée du Cobol n'est envoyée à l'API : seul le SIRET (entré par l'utilisateur) sort.
 
-This is a deliberate architectural choice. No external API means:
-- No rate limits
-- No API keys to manage
-- No third-party downtime
-- No data leaving the server
-- Full GDPR compliance by default
+Le reste de la pile est strictement local :
+- Calculs financiers → COBOL.
+- Génération PDF → PostScript + Ghostscript.
+- Stockage → ISAM.
+- Serveur HTTP → Apache.
+
+Choix assumé : aucune autre API tierce, pour minimiser surface d'attaque, latence et exposition RGPD.
 
 ---
 

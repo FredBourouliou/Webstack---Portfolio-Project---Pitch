@@ -8,15 +8,13 @@
 | Freelance developers | 150,000+ | Appreciate the technical elegance |
 | Small agencies | 200,000+ | Need multi-client invoice management |
 
-### Primary Persona
+### Primary persona
 
-**Marie, 32, freelance graphic designer.**
-She invoices 5-10 clients per month. She currently uses a Word template she found online. She calculates TVA with a calculator app. She has no idea how close she is to the VAT threshold. She doesn't want to pay €15/month for an invoicing tool.
+Une graphiste freelance, ~30 ans, qui facture 5 à 10 clients par mois avec un template Word. Elle calcule la TVA à la calculette, ne suit pas son seuil de franchise, et refuse de payer 15 €/mois pour un outil. C'est le cœur de cible.
 
-### Secondary Persona
+### Secondary persona
 
-**Thomas, 28, freelance web developer.**
-He currently uses a free tier of a SaaS invoicing tool but finds it slow and bloated. He would appreciate an open-source, self-hostable alternative. The COBOL + PostScript angle would make him share the project on Twitter/Hacker News.
+Un développeur freelance qui utilise un free tier d'un SaaS et le trouve lent. Il chercherait une alternative open-source auto-hébergeable. L'angle COBOL + PostScript le pousserait à partager le projet sur Twitter/Hacker News, ce qui amène du trafic gratuit.
 
 ---
 
@@ -66,20 +64,14 @@ He currently uses a free tier of a SaaS invoicing tool but finds it slow and blo
 
 ---
 
-## Unique Selling Proposition
+## Positionnement
 
-### The Technical Story
+Un argument double-niveau :
 
-*"Built with the same technology that processes 95% of the world's financial transactions. Not because it's trendy — because it's right."*
+- Pour le client final : c'est de la techno bancaire, donc fiable, donc pas de centimes qui sautent.
+- Pour le développeur : COBOL + PostScript + HTMX, zéro npm — ça fait causer en ligne et ça draine du trafic.
 
-This USP works on two levels:
-
-1. **For non-technical users:** "The same tech your bank uses" = trust and reliability
-2. **For developers:** "COBOL + PostScript + HTMX with zero npm" = instant virality on Hacker News, Reddit, and dev Twitter
-
-### The Viral Angle
-
-COBILL is inherently shareable. The absurdity of using COBOL for a modern web app — combined with the fact that it's *actually the right tool for the job* — makes it a natural conversation starter. This is built-in marketing that no competitor can replicate.
+Le caractère contre-intuitif du stack est aussi son angle viral. C'est le genre de projet qui circule sur Hacker News et dev Twitter, ce qui compense l'absence de budget marketing.
 
 ---
 

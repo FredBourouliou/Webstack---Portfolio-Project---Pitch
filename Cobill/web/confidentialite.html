@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Politique de confidentialité — Le Cobol</title>
+    <meta name="description" content="Politique de confidentialité de
+        Le Cobol — données collectées, finalités, droits RGPD.">
+    <meta name="robots" content="index, nofollow">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/terminal.css">
+    <link rel="stylesheet" href="/css/modern.css">
+    <link rel="stylesheet" href="/css/landing.css">
+    <link rel="stylesheet" href="/css/legal.css">
+    <script>
+    (function () {
+        var saved = localStorage.getItem('cobill-theme') || 'terminal';
+        document.documentElement.dataset.cobillTheme = saved;
+    })();
+    </script>
+</head>
+<body class="legal">
+    <script>
+    document.body.className = 'legal theme-' +
+        (document.documentElement.dataset.cobillTheme || 'terminal');
+    </script>
+
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-mark">LE COBOL</span>
+            <span class="brand-tag">COBOL-Powered Invoicing</span>
+        </a>
+        <nav class="site-nav">
+            <a href="/">Accueil</a>
+            <a href="/mentions-legales.html">Mentions légales</a>
+            <a href="/cgv.html">CGV</a>
+            <a href="/login.html" class="btn-ghost">Démo</a>
+        </nav>
+    </header>
+
+    <main class="legal-main">
+        <h1>Politique de confidentialité</h1>
+        <p class="updated">Dernière mise à jour&nbsp;: 1<sup>er</sup>&nbsp;mai&nbsp;2026</p>
+
+        <p class="preview-banner">
+            <strong>Site en phase de démonstration.</strong>
+            Aucune donnée commerciale n'est actuellement collectée. Les
+            comptes de démonstration partagent un mot de passe public et
+            ne contiennent que des données de test que vous saisissez
+            volontairement.
+        </p>
+
+        <h2>1. Responsable du traitement</h2>
+        <p>
+            Le responsable du traitement des données personnelles
+            collectées via <code>lecobol.com</code> est l'éditeur du
+            site (voir <a href="/mentions-legales.html">mentions légales</a>).
+        </p>
+        <p>
+            Conformément au RGPD (Règlement (UE) 2016/679) et à la loi
+            Informatique et Libertés modifiée, vous disposez de droits
+            sur vos données décrits à la section&nbsp;6 ci-dessous.
+        </p>
+
+        <h2>2. Données collectées</h2>
+
+        <h3>2.1 Données d'authentification</h3>
+        <ul>
+            <li>Identifiant de connexion (<code>username</code>)</li>
+            <li>Mot de passe (stocké hors source, jamais en clair côté
+                base de données utilisateurs ; le mot de passe d'admin
+                de démonstration est stocké en clair localement sur le
+                serveur, dans un fichier accessible uniquement à
+                l'utilisateur système Apache)</li>
+            <li>Jeton de session (<code>COBILL_SID</code>) &mdash;
+                cookie HttpOnly, expiration 24&nbsp;heures</li>
+        </ul>
+
+        <h3>2.2 Données métier (saisies par l'utilisateur)</h3>
+        <ul>
+            <li>Profil de facturation&nbsp;: raison sociale, adresse,
+                SIRET, IBAN, BIC</li>
+            <li>Clients&nbsp;: nom, adresse, SIRET, email, téléphone</li>
+            <li>Factures&nbsp;: date, échéance, lignes (description,
+                quantité, prix), montants calculés (HT, TVA, TTC,
+                URSSAF, net)</li>
+        </ul>
+
+        <h3>2.3 Données techniques</h3>
+        <ul>
+            <li>Adresse IP de connexion (logs Apache standard, conservés
+                jusqu'à 30 jours pour des fins de sécurité)</li>
+            <li>Aucun outil d'analyse tiers (pas de Google Analytics,
+                pas de Plausible, pas de Matomo, pas de Hotjar)</li>
+            <li>Aucun pixel publicitaire ni traceur tiers</li>
+        </ul>
+
+        <h2>3. Finalités</h2>
+        <ul>
+            <li>
+                <strong>Authentification</strong> &mdash; permettre la
+                connexion sécurisée au compte
+            </li>
+            <li>
+                <strong>Fourniture du service</strong> &mdash;
+                générer et stocker vos factures, calculer les
+                cotisations URSSAF et le seuil TVA
+            </li>
+            <li>
+                <strong>Sécurité</strong> &mdash; détecter et bloquer
+                les tentatives d'accès illégitimes
+            </li>
+            <li>
+                <strong>Aucune finalité publicitaire ou de
+                profilage</strong>
+            </li>
+        </ul>
+
+        <h2>4. Bases légales (art. 6 RGPD)</h2>
+        <ul>
+            <li>
+                <strong>Exécution d'un contrat</strong> (art.&nbsp;6.1.b)
+                &mdash; pour l'authentification et la fourniture du
+                service de facturation
+            </li>
+            <li>
+                <strong>Intérêt légitime</strong> (art.&nbsp;6.1.f)
+                &mdash; pour les logs techniques nécessaires à la
+                sécurité du service
+            </li>
+            <li>
+                <strong>Obligation légale</strong> (art.&nbsp;6.1.c)
+                &mdash; conservation des factures émises pour la durée
+                imposée par le Code de commerce (10&nbsp;ans)
+            </li>
+        </ul>
+
+        <h2>5. Destinataires et sous-traitants</h2>
+        <p>
+            Aucune donnée n'est cédée, vendue ou partagée avec des
+            tiers à des fins commerciales.
+        </p>
+        <p>
+            <strong>Sous-traitants techniques&nbsp;:</strong>
+        </p>
+        <ul>
+            <li>
+                <strong>Amazon Web Services (AWS)</strong> &mdash;
+                hébergement de l'instance, région
+                <code>eu-west-3</code> (Paris). AWS EMEA est certifié
+                ISO&nbsp;27001 et propose des CCT (clauses contractuelles
+                types) pour le RGPD.
+            </li>
+            <li>
+                <strong>Let's Encrypt</strong> (ISRG) &mdash; émission du
+                certificat TLS du site
+            </li>
+        </ul>
+
+        <h2>6. Vos droits</h2>
+        <p>
+            Conformément aux articles&nbsp;15 à 22 du RGPD, vous disposez
+            des droits suivants sur vos données&nbsp;:
+        </p>
+        <ul>
+            <li>droit d'accès et de copie</li>
+            <li>droit de rectification</li>
+            <li>droit à l'effacement (« droit à l'oubli »)</li>
+            <li>droit à la limitation du traitement</li>
+            <li>droit à la portabilité de vos données</li>
+            <li>droit d'opposition pour motifs légitimes</li>
+            <li>droit de définir des directives post-mortem</li>
+        </ul>
+        <p>
+            Pour exercer ces droits&nbsp;:
+            <a href="mailto:contact@lecobol.com">contact@lecobol.com</a>.
+            Une réponse vous sera apportée dans un délai maximum de
+            30&nbsp;jours.
+        </p>
+        <p>
+            En cas de désaccord, vous avez également le droit de
+            saisir la <strong>CNIL</strong> (Commission nationale de
+            l'informatique et des libertés) à
+            <a href="https://www.cnil.fr/fr/plaintes" rel="noopener">www.cnil.fr/fr/plaintes</a>.
+        </p>
+
+        <h2>7. Durée de conservation</h2>
+        <ul>
+            <li><strong>Compte&nbsp;:</strong> tant que le compte est
+                actif</li>
+            <li><strong>Factures&nbsp;:</strong> 10&nbsp;ans après leur
+                émission (obligation légale, art.&nbsp;L123-22 du Code
+                de commerce)</li>
+            <li><strong>Sessions&nbsp;:</strong> 24&nbsp;heures à compter
+                du login, puis suppression</li>
+            <li><strong>Logs Apache&nbsp;:</strong> 30&nbsp;jours
+                glissants</li>
+        </ul>
+
+        <h2>8. Cookies</h2>
+        <p>
+            Le site utilise <strong>un seul cookie</strong>&nbsp;:
+        </p>
+        <ul>
+            <li>
+                <code>COBILL_SID</code> &mdash; cookie de session
+                strictement nécessaire au fonctionnement de
+                l'authentification.
+                <strong>Durée&nbsp;:</strong> 24&nbsp;heures.
+                <strong>Caractère&nbsp;:</strong>
+                <code>HttpOnly</code>, <code>SameSite=Lax</code>,
+                <code>Secure</code> (HTTPS uniquement).
+            </li>
+        </ul>
+        <p>
+            Ce cookie étant strictement nécessaire au service, il est
+            exempté de consentement préalable conformément à la
+            recommandation CNIL du 17 septembre 2020.
+        </p>
+        <p>
+            <strong>Aucun cookie tiers, aucun traceur publicitaire,
+            aucun cookie de mesure d'audience</strong> n'est posé.
+        </p>
+
+        <h2>9. Sécurité</h2>
+        <ul>
+            <li>Connexion HTTPS forcée (TLS 1.2+ via Let's Encrypt)</li>
+            <li>Cookies <code>HttpOnly</code> et <code>SameSite=Lax</code></li>
+            <li>En-têtes de sécurité&nbsp;:
+                <code>X-Content-Type-Options: nosniff</code>,
+                <code>X-Frame-Options: DENY</code>,
+                <code>Referrer-Policy: strict-origin-when-cross-origin</code>,
+                <code>Strict-Transport-Security</code></li>
+            <li>Pare-feu UFW restreint aux ports 22 / 80 / 443</li>
+            <li>Sauvegardes régulières des données métier</li>
+        </ul>
+
+        <h2>10. Modification de la présente politique</h2>
+        <p>
+            Cette politique peut être mise à jour. La date de dernière
+            modification figure en haut du document. Toute modification
+            substantielle sera notifiée par email aux titulaires de
+            comptes actifs.
+        </p>
+
+        <a class="back" href="/">&larr; Retour à l'accueil</a>
+    </main>
+</body>
+</html>

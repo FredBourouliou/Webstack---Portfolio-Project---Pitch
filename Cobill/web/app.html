@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Le Cobol — Console</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/terminal.css">
+    <link rel="stylesheet" href="/css/modern.css">
+    <script src="/js/htmx.min.js"></script>
+    <script>
+    (function () {
+        var saved = localStorage.getItem('cobill-theme') || 'terminal';
+        document.documentElement.dataset.cobillTheme = saved;
+    })();
+    </script>
+</head>
+<body>
+    <script>
+    document.body.className = 'theme-' +
+        (document.documentElement.dataset.cobillTheme || 'terminal');
+    </script>
+
+    <header>
+        <div class="header-title">
+            <a href="/" style="text-decoration:none;color:inherit">LE COBOL</a>
+            v0.1 &mdash; INVOICE MANAGEMENT SYSTEM
+        </div>
+        <div class="header-bar">
+            ============================================================
+        </div>
+    </header>
+
+    <nav>
+        <button class="nav-key"
+                hx-get="/cgi-bin/invoice?action=list"
+                hx-target="#content"
+                hx-swap="innerHTML">[F1] INVOICES</button>
+
+        <button class="nav-key"
+                hx-get="/cgi-bin/client?action=list"
+                hx-target="#content"
+                hx-swap="innerHTML">[F2] CLIENTS</button>
+
+        <button class="nav-key"
+                hx-get="/cgi-bin/dashboard"
+                hx-target="#content"
+                hx-swap="innerHTML">[F3] DASHBOARD</button>
+
+        <button class="nav-key"
+                hx-post="/cgi-bin/auth?action=logout"
+                hx-confirm="Log out?">[F4] LOGOUT</button>
+
+        <button class="nav-key" id="theme-toggle"
+                onclick="toggleCobillTheme()">[F5] THEME</button>
+    </nav>
+
+    <script>
+    function toggleCobillTheme() {
+        var current = document.body.classList.contains('theme-modern')
+            ? 'modern' : 'terminal';
+        var next = current === 'terminal' ? 'modern' : 'terminal';
+        document.body.className = 'theme-' + next;
+        document.documentElement.dataset.cobillTheme = next;
+        localStorage.setItem('cobill-theme', next);
+    }
+    </script>
+
+    <main id="content">
+        <section class="panel">
+            <h1>Le Cobol</h1>
+            <p>
+                Touche <strong>[F1]&nbsp;INVOICES</strong> pour les
+                factures, <strong>[F2]&nbsp;CLIENTS</strong> pour
+                l'annuaire, <strong>[F3]&nbsp;DASHBOARD</strong> pour
+                les agrégats URSSAF.
+            </p>
+            <p class="muted">
+                COBOL pour le calcul, PostScript pour le PDF, HTMX
+                pour l'UI. Le tout servi par Apache CGI.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <span>STATUS: READY</span>
+        <span>STACK: COBOL · CGI · HTMX</span>
+    </footer>
+
+</body>
+</html>

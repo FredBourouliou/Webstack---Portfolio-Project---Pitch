@@ -121,4 +121,4 @@ Final touches before deployment and pitch.
 | Theme toggle | Low | Low | P2 |
 | Landing page | Low | Low | P2 |
 
-**Rule:** All P0 features must be complete before moving to P1. All P1 before P2. If time runs short, P2 features are cut first.
+Règle : All P0 features must be complete before moving to P1. All P1 before P2. If time runs short, P2 features are cut first.

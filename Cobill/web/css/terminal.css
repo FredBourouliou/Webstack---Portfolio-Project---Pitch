@@ -1,0 +1,185 @@
+/* Scoped to body.theme-terminal, not :root, to coexist with modern.css */
+body.theme-terminal {
+    --bg: #0a0a0a;
+    --fg: #d8f0c8;
+    --fg-dim: #7da77d;
+    --fg-bright: #66ff66;
+    --fg-accent: #66ff66;
+    --input-bg: #111;
+    --btn-fg: #0a0a0a;
+
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: 'IBM Plex Mono', 'Menlo', 'Courier New', monospace;
+    font-size: 14.5px;
+    line-height: 1.6;
+}
+
+/* glow only on h1/h2/brand */
+body.theme-terminal h1,
+body.theme-terminal h2,
+body.theme-terminal .brand-mark,
+body.theme-terminal .hero-title {
+    color: var(--fg-accent);
+    text-shadow: 0 0 6px rgba(102, 255, 102, 0.25);
+}
+
+/* CRT scanlines */
+body.theme-terminal::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        transparent 0,
+        transparent 3px,
+        rgba(0, 0, 0, 0.06) 3px,
+        rgba(0, 0, 0, 0.06) 4px
+    );
+    z-index: 9999;
+}
+
+body.theme-terminal a { color: var(--fg-bright); }
+
+body.theme-terminal input,
+body.theme-terminal button {
+    background: var(--input-bg);
+    border: 1px solid var(--fg-dim);
+    color: var(--fg);
+}
+
+body.theme-terminal input:focus,
+body.theme-terminal button:focus,
+body.theme-terminal button:hover {
+    border-color: var(--fg-bright);
+    outline: none;
+}
+
+body.theme-terminal .btn-primary {
+    background: var(--fg);
+    color: var(--btn-fg);
+    border: 1px solid var(--fg);
+    font-weight: bold;
+    text-shadow: none;
+}
+
+body.theme-terminal .btn-primary:hover {
+    background: var(--fg-bright);
+    border-color: var(--fg-bright);
+}
+
+body.theme-terminal code {
+    color: var(--fg-bright);
+}
+
+body.theme-terminal th,
+body.theme-terminal td {
+    border-color: var(--fg-dim);
+}
+
+body.theme-terminal th {
+    background: rgba(26, 140, 26, 0.15);
+    color: var(--fg-bright);
+}
+
+body.theme-terminal tr:hover td {
+    background: rgba(26, 140, 26, 0.08);
+}
+
+body.theme-terminal .btn-danger {
+    border-color: #ff4444;
+    color: #ff6666;
+}
+
+body.theme-terminal .btn-danger:hover {
+    background: rgba(255, 51, 51, 0.15);
+    border-color: #ff6666;
+}
+
+body.theme-terminal .nav-key:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+body.theme-terminal .filters input[type="search"],
+body.theme-terminal .filters select {
+    background: var(--input-bg);
+    border: 1px solid var(--fg-dim);
+    color: var(--fg);
+}
+
+body.theme-terminal .badge {
+    border-color: currentColor;
+}
+
+body.theme-terminal .badge-draft {
+    color: var(--fg-dim);
+    border-color: var(--fg-dim);
+}
+
+body.theme-terminal .badge-sent {
+    color: #66ccff;
+    border-color: #66ccff;
+}
+
+body.theme-terminal .badge-paid {
+    color: var(--fg-bright);
+    background: rgba(51, 255, 51, 0.12);
+    border-color: var(--fg-bright);
+}
+
+body.theme-terminal .badge-overdue {
+    color: #ff6666;
+    border-color: #ff6666;
+    background: rgba(255, 51, 51, 0.1);
+    animation: badge-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 51, 51, 0); }
+    50%      { box-shadow: 0 0 8px rgba(255, 51, 51, 0.4); }
+}
+
+body.theme-terminal .btn-paid {
+    color: var(--fg-bright);
+    border-color: var(--fg-bright);
+}
+
+body.theme-terminal .btn-paid:hover {
+    background: rgba(102, 255, 102, 0.15);
+}
+
+body.theme-terminal .warn {
+    color: #ff6666;
+    text-shadow: 0 0 4px rgba(255, 102, 102, 0.4);
+}
+
+body.theme-terminal .vat-safe     .vat-fill { color: var(--fg); }
+body.theme-terminal .vat-warn     .vat-fill { color: #ffcc00; }
+body.theme-terminal .vat-alert    .vat-fill { color: #ff8c00; }
+body.theme-terminal .vat-exceeded .vat-fill {
+    color: #ff4444;
+    animation: vat-pulse 1.6s ease-in-out infinite;
+}
+body.theme-terminal .vat-warn     .vat-summary { color: #ffcc00; }
+body.theme-terminal .vat-alert    .vat-summary { color: #ff8c00; }
+body.theme-terminal .vat-exceeded .vat-summary { color: #ff4444; }
+
+@keyframes vat-pulse {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 0.95; }
+}
+
+body.theme-terminal .aging-fresh td { color: var(--fg); }
+body.theme-terminal .aging-30 td    { color: #ffcc00; }
+body.theme-terminal .aging-60 td    { color: #ff8c00; }
+body.theme-terminal .aging-90 td    { color: #ff6644; }
+body.theme-terminal .aging-old td   { color: #ff3333; font-weight: bold; }
+
+body.theme-terminal .inv-link {
+    color: var(--fg-bright);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+

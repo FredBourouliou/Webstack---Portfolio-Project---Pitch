@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Le Cobol — La facturation décimale, comme votre banque la code</title>
+    <meta name="description" content="Le Cobol : facturation pour
+        auto-entrepreneurs français. Calculs décimaux exacts en COBOL,
+        PDF natifs en PostScript, zéro npm, zéro framework. Conforme
+        L441-10 + 293 B du CGI.">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/terminal.css">
+    <link rel="stylesheet" href="/css/modern.css">
+    <link rel="stylesheet" href="/css/landing.css">
+    <script>
+    (function () {
+        var saved = localStorage.getItem('cobill-theme') || 'terminal';
+        document.documentElement.dataset.cobillTheme = saved;
+    })();
+    </script>
+</head>
+<body class="landing">
+    <script>
+    document.body.className = 'landing theme-' +
+        (document.documentElement.dataset.cobillTheme || 'terminal');
+    </script>
+
+    <header class="site-header">
+        <a class="brand" href="/">
+            <span class="brand-mark">LE COBOL</span>
+            <span class="brand-tag">Facturation décimale</span>
+        </a>
+        <nav class="site-nav">
+            <a href="#decimal">Le test</a>
+            <a href="#features">Fonctionnalités</a>
+            <a href="#stack">Stack</a>
+            <a href="#pricing">Tarifs</a>
+            <a href="/login.html" class="btn-ghost">Accéder à la démo</a>
+        </nav>
+    </header>
+
+    <main>
+    <!-- hero -->
+    <section class="hero">
+        <p class="hero-eyebrow">
+            Depuis 1959. Tellement vieux que c'est neuf.
+        </p>
+        <h1 class="hero-title">
+            La facturation décimale,<br>
+            comme votre banque la code.
+        </h1>
+        <p class="hero-lede">
+            JavaScript fait <code>0.30000000000000004</code>.<br>
+            Le Cobol fait <code class="ok">0.30</code>.<br>
+            À chaque facture. Sans exception. Sans dépendance.
+        </p>
+        <div class="hero-cta">
+            <a href="/login.html" class="btn-primary">
+                Voir la démo &rarr;
+            </a>
+            <a href="https://github.com/lecobol/lecobol"
+               class="btn-ghost">Code source</a>
+        </div>
+        <p class="hero-foot">
+            Login démo : <code>admin</code> / <code>cobill</code>
+        </p>
+    </section>
+
+    <!-- decimal -->
+    <section class="section section-alt decimal" id="decimal">
+        <h2>Le test que tous les autres outils ratent</h2>
+
+        <table class="decimal-table">
+            <thead>
+                <tr>
+                    <th>Calcul</th>
+                    <th>JavaScript</th>
+                    <th>Python <code>float</code></th>
+                    <th>Le Cobol</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th><code>0.1 + 0.2</code></th>
+                    <td class="bad"><code>0.30000000000000004</code></td>
+                    <td class="bad"><code>0.30000000000000004</code></td>
+                    <td class="ok"><code>0.30</code></td>
+                </tr>
+                <tr>
+                    <th><code>1.1 × 1.1</code></th>
+                    <td class="bad"><code>1.2100000000000002</code></td>
+                    <td class="bad"><code>1.2100000000000002</code></td>
+                    <td class="ok"><code>1.21</code></td>
+                </tr>
+                <tr>
+                    <th><code>0.3 − 0.1</code></th>
+                    <td class="bad"><code>0.19999999999999998</code></td>
+                    <td class="bad"><code>0.19999999999999998</code></td>
+                    <td class="ok"><code>0.20</code></td>
+                </tr>
+                <tr>
+                    <th><code>3 × 33,33</code></th>
+                    <td class="bad"><code>99.99000000000001</code></td>
+                    <td class="ok"><code>99.99</code></td>
+                    <td class="ok"><code>99,99</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p class="decimal-prose">
+            Sur une facture isolée, l'écart est invisible. Sur 1&nbsp;000
+            factures par an, l'erreur cumulée d'un float dépasse
+            facilement l'euro. Multipliée par 24 mois de URSSAF, ça fait
+            une journée de boulot perdue à reconstituer un compte. Le
+            Cobol stocke chaque montant en <code>PIC&nbsp;9(7)V99</code>
+            &mdash; sept chiffres avant la virgule, deux après, point
+            barre. Pas de float. Pas d'arrondi furtif. La méthode des
+            banques, depuis 65 ans.
+        </p>
+    </section>
+
+    <!-- features -->
+    <section class="section features" id="features">
+        <h2>Ce que Le Cobol fait</h2>
+        <div class="feature-grid">
+            <article class="feature-card">
+                <h3>Facturation conforme</h3>
+                <p>
+                    SIRET, mentions L441-10, indemnité forfaitaire 40&nbsp;€,
+                    TVA 20/10/5,5/0&nbsp;%, art. 293&nbsp;B du CGI,
+                    numérotation YYYY-NNNN sans gap. Validé par
+                    smoke&nbsp;test continu.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <h3>PDF pixel-perfect</h3>
+                <p>
+                    Pas de wkhtmltopdf, pas de Puppeteer, pas de
+                    WeasyPrint. PostScript natif rendu par Ghostscript.
+                    Sortie ~12&nbsp;Ko, qualité <code>/prepress</code>,
+                    reproductible bit-à-bit sur n'importe quel Linux.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <h3>URSSAF en clair</h3>
+                <p>
+                    Cotisations calculées par trimestre (Q1&hellip;Q4),
+                    à l'euro près, prêtes à recopier sur l'espace URSSAF
+                    auto-entrepreneurs. YTD à jour à chaque facture.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <h3>Seuil TVA tracké</h3>
+                <p>
+                    Progress bar en temps réel vs 36&nbsp;800&nbsp;€.
+                    Date estimée de franchissement par projection
+                    linéaire. Alerte 80/90/100&nbsp;%, animation rouge
+                    pulsée au dépassement. Tu sais où tu en es, à la
+                    journée près.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <h3>Aging des impayés</h3>
+                <p>
+                    Buckets 1-30 / 31-60 / 61-90 / 90+ jours, calculés
+                    via <code>INTEGER-OF-DATE</code>. Auto-OVERDUE au
+                    rendu, pas de cron à maintenir. Total à recouvrer
+                    en un coup d'œil.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <h3>Zéro npm</h3>
+                <p>
+                    14&nbsp;Ko de JavaScript (HTMX seul). Pas de build
+                    step. Pas de <code>node_modules</code>. Tourne sur
+                    un VPS à 5&nbsp;€/mois. Coût d'hébergement ~24&nbsp;
+                    fois moins qu'un Stripe Atlas + QuickBooks.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <!-- preview -->
+    <section class="section section-alt preview" id="preview">
+        <h2>Le PDF que ça génère</h2>
+        <div class="preview-frame">
+            <img src="/assets/invoice-preview.png"
+                 alt="Aperçu d'une facture Le Cobol — header bleu LE COBOL, table HT/TVA/TTC, mentions légales L441-10"
+                 loading="lazy">
+        </div>
+        <p class="preview-caption">
+            12 Ko, qualité <code>/prepress</code>, polices embarquées,
+            généré à la volée par <code>pdf-gen.cob</code> + Ghostscript.
+            Aucun HTML rendu, aucun Chromium headless.
+        </p>
+    </section>
+
+    <!-- stack -->
+    <section class="section stack" id="stack">
+        <h2>Le stack &mdash; par choix, pas par hasard</h2>
+        <div class="stack-row">
+            <div class="stack-cell">
+                <strong class="stack-name">COBOL</strong>
+                <span class="stack-year">1959</span>
+                <p>
+                    Le langage des banques. Arithmétique décimale native
+                    par <code>PIC</code> clause. Compilé en C puis en
+                    binaire. Encore en production sur 95&nbsp;% des
+                    distributeurs ATM.
+                </p>
+            </div>
+
+            <div class="stack-cell">
+                <strong class="stack-name">PostScript</strong>
+                <span class="stack-year">1985</span>
+                <p>
+                    Le langage des imprimantes laser. Origine du PDF.
+                    Pixel-perfect par coordonnées explicites. Aucune
+                    dépendance HTML.
+                </p>
+            </div>
+
+            <div class="stack-cell">
+                <strong class="stack-name">CGI</strong>
+                <span class="stack-year">1993</span>
+                <p>
+                    Le protocole web original. Apache lance un binaire,
+                    lit stdin, écrit stdout. Aucun runtime, aucun PM,
+                    aucun framework.
+                </p>
+            </div>
+
+            <div class="stack-cell">
+                <strong class="stack-name">HTMX</strong>
+                <span class="stack-year">2020</span>
+                <p>
+                    L'interactivité sans framework. 14&nbsp;Ko. Le
+                    serveur retourne du HTML, le client l'injecte. Pas
+                    de JSON, pas de virtual DOM, pas de hydration.
+                </p>
+            </div>
+        </div>
+
+        <blockquote class="stack-quote">
+            « Votre banque calcule en COBOL depuis 60 ans, votre imprimante parle PostScript depuis 1985 — Le Cobol assemble les deux. »
+        </blockquote>
+    </section>
+
+    <!-- pricing -->
+    <section class="section section-alt pricing" id="pricing">
+        <h2>Tarifs</h2>
+        <div class="pricing-grid">
+            <article class="price-card">
+                <h3>Free</h3>
+                <p class="price">0&nbsp;€<span>/mois</span></p>
+                <ul>
+                    <li>5 factures / mois</li>
+                    <li>1 client</li>
+                    <li>PDF basique</li>
+                </ul>
+                <a href="/login.html" class="btn-ghost">Démarrer</a>
+            </article>
+
+            <article class="price-card price-card--featured">
+                <span class="badge-featured">populaire</span>
+                <h3>Pro</h3>
+                <p class="price">5&nbsp;€<span>/mois</span></p>
+                <ul>
+                    <li>Factures illimitées</li>
+                    <li>Clients illimités</li>
+                    <li>Branding PDF personnalisé</li>
+                    <li>Dashboard URSSAF + seuil TVA</li>
+                    <li>Aging des impayés</li>
+                </ul>
+                <a href="/login.html" class="btn-primary">Pro</a>
+            </article>
+
+            <article class="price-card">
+                <h3>Business</h3>
+                <p class="price">15&nbsp;€<span>/mois</span></p>
+                <ul>
+                    <li>Tout Pro</li>
+                    <li>Multi-utilisateurs</li>
+                    <li>API REST</li>
+                    <li>Export FEC (comptable)</li>
+                    <li>Relances automatisées</li>
+                </ul>
+                <a href="/login.html" class="btn-ghost">Business</a>
+            </article>
+        </div>
+    </section>
+
+    <!-- about -->
+    <section class="section about" id="about">
+        <h2>À propos</h2>
+        <p>
+            Le Cobol est un projet open-source. L'objectif : un outil
+            de facturation pour les auto-entrepreneurs français qui
+            tient sur un VPS à 5&nbsp;€/mois, fait des calculs exacts,
+            et n'embarque pas 500&nbsp;dépendances npm. Le moteur de
+            calcul en COBOL est utilisé par les SI bancaires depuis
+            les années 60 ; on s'en sert pour la même raison qu'eux :
+            pas de surprise sur les arrondis.
+        </p>
+        <p>
+            Pas de Postgres, pas de Tailwind, pas de framework JS —
+            non par dogme, parce que ce projet n'en a pas besoin. Le
+            stack a été choisi pour la précision et la longévité,
+            pas pour la mode.
+        </p>
+    </section>
+    </main>
+
+    <!-- footer -->
+    <footer class="site-footer">
+        <div class="footer-cols">
+            <div>
+                <strong>Le Cobol</strong>
+                <p class="footer-tag">La facturation décimale.</p>
+            </div>
+            <div>
+                <strong>Produit</strong>
+                <a href="/login.html">Démo</a>
+                <a href="#pricing">Tarifs</a>
+                <a href="https://github.com/lecobol/lecobol">GitHub</a>
+            </div>
+            <div>
+                <strong>Légal</strong>
+                <a href="/mentions-legales.html">Mentions légales</a>
+                <a href="/cgv.html">CGV</a>
+                <a href="/confidentialite.html">Politique de confidentialité</a>
+            </div>
+        </div>
+        <p class="copyright">
+            &copy; 2026 Le Cobol &middot;
+            <code>0.1&nbsp;+&nbsp;0.2&nbsp;=&nbsp;0,30</code>
+        </p>
+    </footer>
+</body>
+</html>

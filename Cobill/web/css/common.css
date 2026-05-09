@@ -1,0 +1,488 @@
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+header,
+nav,
+main,
+footer {
+    padding: 12px 24px;
+}
+
+header .header-title {
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
+
+header .header-bar {
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.85em;
+    margin-top: 4px;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-top: 1px dashed currentColor;
+    border-bottom: 1px dashed currentColor;
+}
+
+.nav-key {
+    opacity: 0.7;
+}
+
+main {
+    flex: 1;
+}
+
+.panel {
+    max-width: 720px;
+}
+
+.panel h1 {
+    font-size: 1.2em;
+    margin: 0 0 12px;
+    letter-spacing: 0.04em;
+}
+
+code {
+    padding: 1px 6px;
+    border: 1px solid currentColor;
+    opacity: 0.9;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.form-row label {
+    width: 110px;
+}
+
+.form-row input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    font: inherit;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+button {
+    font: inherit;
+    padding: 6px 14px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+}
+
+.result-box {
+    margin-top: 20px;
+    padding: 16px;
+    min-height: 80px;
+    border: 1px solid currentColor;
+}
+
+.result-box dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    margin: 8px 0 0;
+}
+
+.result-box dt {
+    opacity: 0.7;
+}
+
+.result-box dd {
+    margin: 0;
+}
+
+.result-box .echo h2 {
+    margin: 0 0 8px;
+    font-size: 1em;
+    letter-spacing: 0.06em;
+}
+
+footer {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px dashed currentColor;
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.muted { opacity: 0.7; }
+
+.panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.panel-head h2 {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.95em;
+}
+
+th, td {
+    border: 1px solid currentColor;
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+th {
+    font-weight: bold;
+    opacity: 0.85;
+    letter-spacing: 0.05em;
+}
+
+.row-actions {
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.row-actions button {
+    padding: 2px 8px;
+    font-size: 0.9em;
+}
+
+.count {
+    margin-top: 8px;
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+.form-row-double {
+    flex-wrap: nowrap;
+}
+
+.form-row .small {
+    flex: 0 0 90px;
+}
+
+td.num,
+th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+table.line-items input {
+    width: 100%;
+    padding: 4px 6px;
+    font: inherit;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid currentColor;
+    color: inherit;
+}
+
+table.line-items td:first-child {
+    width: 32px;
+    text-align: center;
+    opacity: 0.6;
+}
+
+table.totals {
+    margin-top: 16px;
+    width: auto;
+    min-width: 320px;
+    margin-left: auto;
+}
+
+table.totals th,
+table.totals td {
+    border: 0;
+    border-top: 1px dashed currentColor;
+    padding: 4px 12px;
+}
+
+table.totals tr.ttc th,
+table.totals tr.ttc td {
+    border-top: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    font-weight: bold;
+    font-size: 1.05em;
+}
+
+dl.kv {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    margin: 0 0 16px;
+}
+
+dl.kv dt {
+    opacity: 0.7;
+}
+
+dl.kv dd {
+    margin: 0;
+}
+
+.filters {
+    display: flex;
+    gap: 12px;
+    margin: 8px 0 16px;
+    align-items: center;
+}
+
+.filters input[type="search"] {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 10px;
+    font: inherit;
+}
+
+.filters select {
+    padding: 6px 10px;
+    font: inherit;
+}
+
+.list-footer {
+    margin-top: 12px;
+    opacity: 0.85;
+    font-size: 0.9em;
+    text-align: right;
+}
+
+.badge {
+    display: inline-block;
+    padding: 1px 8px;
+    font-size: 0.85em;
+    letter-spacing: 0.06em;
+    border: 1px solid currentColor;
+    text-transform: uppercase;
+}
+
+.panel-head .actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.panel-head .actions a.btn-primary,
+.panel-head .actions a.btn {
+    display: inline-block;
+    padding: 6px 14px;
+    text-decoration: none;
+    cursor: pointer;
+    font: inherit;
+    letter-spacing: 0.04em;
+}
+
+.barchart {
+    list-style: none;
+    margin: 12px 0 24px;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.barchart li {
+    display: grid;
+    grid-template-columns: 40px 1fr 130px;
+    align-items: center;
+    gap: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.bar-label {
+    font-weight: 600;
+    opacity: 0.7;
+    font-size: 0.85em;
+    letter-spacing: 0.05em;
+}
+
+.bar-track {
+    position: relative;
+    height: 16px;
+    background: rgba(127, 127, 127, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: currentColor;
+    opacity: 0.55;
+    border-radius: 2px;
+}
+
+.bar-value {
+    text-align: right;
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+.panel h3 {
+    font-size: 1em;
+    margin: 20px 0 8px;
+    letter-spacing: 0.04em;
+    opacity: 0.9;
+}
+
+.vat-tracker {
+    margin: 8px 0 24px;
+}
+
+.vat-bar {
+    position: relative;
+    height: 14px;
+    background: rgba(127, 127, 127, 0.18);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.vat-fill {
+    height: 100%;
+    background: currentColor;
+    opacity: 0.55;
+    transition: width 0.4s ease-out;
+}
+
+.vat-summary {
+    margin: 8px 0 4px;
+    font-size: 0.95em;
+    font-variant-numeric: tabular-nums;
+}
+
+.vat-cta {
+    margin: 4px 0 0;
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 768px) {
+    header,
+    nav,
+    main,
+    footer {
+        padding: 10px 14px;
+    }
+
+    header .header-bar { display: none; }
+
+    nav { gap: 8px; }
+
+    .nav-key {
+        flex: 1 1 auto;
+        min-width: 130px;
+        text-align: center;
+    }
+
+    .panel {
+        padding: 0;
+        max-width: 100%;
+    }
+
+    .panel-head {
+        flex-wrap: wrap;
+    }
+
+    .panel-head .actions {
+        flex-wrap: wrap;
+    }
+
+    /* Tables become horizontally scrollable. */
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    .form-row label {
+        width: auto;
+    }
+
+    .form-row-double { flex-direction: column; }
+    .form-row .small { flex: 1 1 auto; }
+
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .barchart li {
+        grid-template-columns: 36px 1fr 100px;
+        gap: 8px;
+        font-size: 0.9em;
+    }
+
+    .row-actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* Touch targets >= 40px on phones. */
+    button, a.btn-primary, a.btn,
+    input[type="submit"] {
+        min-height: 38px;
+    }
+
+    table.totals { width: 100%; min-width: 0; }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 1.1em; }
+    h2 { font-size: 1em; }
+    h3 { font-size: 0.95em; }
+
+    .panel h1, .panel h2 { letter-spacing: 0; }
+
+    .barchart .bar-value { font-size: 0.8em; }
+
+    /* Drop the 'days late' column on tiny screens. */
+    .row-actions button { font-size: 0.85em; }
+}
+
+
+
+
+
+
+
+.form-row-siret { gap: 6px; }
+.form-row-siret .btn-sirene { white-space: nowrap; }
+.sirene-hint { min-height: 1.2em; margin-top: 4px; }
+.sirene-ok { color: var(--fg-bright); }
+.sirene-err { color: var(--fg-warn, #b45309); }
+
+a.back-link { opacity: 0.85; }
+a.back-link:hover { opacity: 1; }

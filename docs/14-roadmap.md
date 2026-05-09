@@ -98,32 +98,17 @@ The product becomes a real SaaS.
 
 ---
 
-## Long-Term Vision
+## Vision long terme
 
-COBILL starts as a portfolio project and evolves into a niche invoicing tool with a unique identity:
+Quatre directions possibles, non exclusives :
 
-1. **Open-source core** — The COBOL calculation engine and PostScript PDF generator remain open-source. Community contributions welcome.
-
-2. **Hosted SaaS** — A managed version for users who don't want to self-host. Revenue from Pro/Business subscriptions.
-
-3. **Enterprise module** — SPARK-verified calculations for industries requiring mathematical proof of correctness (finance, aviation, defense).
-
-4. **Educational platform** — COBILL as a teaching tool: "Learn COBOL by building a real web application." Partnerships with coding bootcamps and universities.
-
-### The Endgame
-
-COBILL proves that the right tool for the job isn't always the newest one. COBOL handles money better than JavaScript. PostScript handles printing better than HTML-to-PDF converters. Sometimes, the best technology is the one that's been doing the same job perfectly for 65 years.
+1. Cœur open-source : le moteur de calcul COBOL et le générateur PostScript restent libres, contributions externes bienvenues.
+2. SaaS hébergé : une version managée pour les freelances qui ne veulent pas auto-héberger ; revenu via les plans Pro/Business.
+3. Module entreprise : calculs vérifiés en SPARK (sous-ensemble Ada) pour les secteurs à exigence formelle (finance, aviation, défense).
+4. Outil pédagogique : "apprendre COBOL en construisant une vraie app web", partenariats avec bootcamps et universités.
 
 ---
 
-## Contributing
+## Contributions
 
-After the Holberton delivery, the repository will be open for contributions:
-
-- **COBOL developers** — Help improve the calculation engine and add features
-- **PostScript artists** — Design new invoice templates
-- **Frontend developers** — Create additional CSS themes
-- **Technical writers** — Improve documentation and tutorials
-- **Translators** — Internationalize the interface
-
-Contribution guidelines will be published in `CONTRIBUTING.md` after v1.0 release.
+Après la livraison Holberton, le dépôt est ouvert. Domaines où une aide est utile : moteur de calcul COBOL, templates PostScript, thèmes CSS, doc, internationalisation. Le `CONTRIBUTING.md` sera publié avec la v1.0.

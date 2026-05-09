@@ -1,0 +1,17 @@
+bin/*
+!bin/.gitkeep
+
+data/*
+!data/.gitkeep
+
+pdf/*
+!pdf/.gitkeep
+
+.env
+.env.local
+
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

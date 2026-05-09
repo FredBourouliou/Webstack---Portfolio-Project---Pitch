@@ -13,7 +13,7 @@
 
 ## Week 1 — Foundations (Days 1-7)
 
-**Goal:** Prove the stack works. Build the basic CRUD app.
+Objectif : Prove the stack works. Build the basic CRUD app.
 
 | Day | Task | Deliverable | Risk Validation |
 |-----|------|-------------|-----------------|
@@ -25,13 +25,13 @@
 | **6** | Invoice creation + calculation | Invoice form with line items. COBOL computes HT/TVA/TTC | Core engine ✓ |
 | **7** | Invoice listing + detail view | List all invoices, click to view detail | — |
 
-**Week 1 Milestone:** A working web app where you can create clients, create invoices with automatic calculations, and list them. No PDF yet.
+Étape semaine 1 : A working web app where you can create clients, create invoices with automatic calculations, and list them. No PDF yet.
 
 ---
 
 ## Week 2 — PDF Engine + Core Features (Days 8-14)
 
-**Goal:** Add PostScript PDF generation. Complete the invoicing flow.
+Objectif : Add PostScript PDF generation. Complete the invoicing flow.
 
 | Day | Task | Deliverable | Risk Validation |
 |-----|------|-------------|-----------------|
@@ -43,13 +43,13 @@
 | **13** | Retro terminal CSS theme | IBM 3270 green-on-black theme applied to all pages | — |
 | **14** | Testing + bug fixes | End-to-end testing of all features. Fix edge cases | — |
 
-**Week 2 Milestone:** Full invoicing pipeline working — create client, create invoice, download pixel-perfect PDF. Terminal theme applied.
+Étape semaine 2 : Full invoicing pipeline working — create client, create invoice, download pixel-perfect PDF. Terminal theme applied.
 
 ---
 
 ## Week 3 — Business Logic + Dashboard (Days 15-21)
 
-**Goal:** Add the features that make COBILL genuinely useful for freelancers.
+Objectif : Add the features that make COBILL genuinely useful for freelancers.
 
 | Day | Task | Deliverable |
 |-----|------|-------------|
@@ -61,13 +61,13 @@
 | **20** | Authentication | Login page, session cookies, session ISAM store, logout |
 | **21** | Testing + bug fixes | Full regression testing. Fix all known issues |
 
-**Week 3 Milestone:** Business-ready app with URSSAF tracking, VAT alerts, dashboard, dual themes, and authentication.
+Étape semaine 3 : Business-ready app with URSSAF tracking, VAT alerts, dashboard, dual themes, and authentication.
 
 ---
 
 ## Week 4 — Polish + Deploy + Pitch (Days 22-27)
 
-**Goal:** Ship it. Present it.
+Objectif : Ship it. Present it.
 
 | Day | Task | Deliverable |
 |-----|------|-------------|
@@ -78,7 +78,7 @@
 | **26** | Prepare pitch slides | Google Slides presentation (max 10 min). Key slides: problem, solution, demo, tech, commercial |
 | **27** | Rehearse pitch + final polish | Practice delivery. Time it. Fix last-minute issues |
 
-**Week 4 Milestone:** Live production URL. Complete documentation. Pitch-ready.
+Étape semaine 4 : Live production URL. Complete documentation. Pitch-ready.
 
 ---
 
@@ -103,7 +103,7 @@ Day 1: Environment    ──→ Day 2: CGI works ──→ Day 3: HTMX loop
                                                   Day 27: Pitch
 ```
 
-**Critical risks are front-loaded:** If CGI doesn't work by Day 2 or PostScript by Day 8, there is still time to pivot. If everything works by Day 14, the project is on track.
+Les risques critiques sont en début de planning : If CGI doesn't work by Day 2 or PostScript by Day 8, there is still time to pivot. If everything works by Day 14, the project is on track.
 
 ---
 
@@ -118,4 +118,4 @@ If behind schedule:
 | Behind by end of Week 2 | Cut Week 3 scope: drop auth and modern theme. Focus on URSSAF + dashboard |
 | Behind by end of Week 3 | Cut landing page. Deploy with minimal documentation. Focus on pitch |
 
-**Non-negotiable deliverables:** Invoice creation with COBOL calculation + PDF generation with PostScript + working demo on a live URL.
+Livrables incompressibles : Invoice creation with COBOL calculation + PDF generation with PostScript + working demo on a live URL.

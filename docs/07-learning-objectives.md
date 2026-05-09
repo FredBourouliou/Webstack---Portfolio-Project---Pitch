@@ -100,9 +100,7 @@ Deploying COBILL requires:
 
 ## 8. Exploring Unfamiliar Technologies
 
-The most important learning objective: **picking up unknown languages and tools under time pressure**, and delivering a production-grade result.
-
-COBOL, PostScript, and CGI are not taught in the Holberton curriculum. Learning them from scratch and building a functional product in 27 days demonstrates the core skill that every employer values: **the ability to learn anything, fast.**
+COBOL, PostScript, and CGI are not part of the Holberton curriculum. Picking them up from scratch and shipping a working product in 27 days is in itself the main learning objective: showing that an unknown language is not a blocker.
 
 ---
 

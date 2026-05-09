@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Le Cobol — Login</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/terminal.css">
+    <link rel="stylesheet" href="/css/modern.css">
+    <script>
+    (function () {
+        var saved = localStorage.getItem('cobill-theme') || 'terminal';
+        document.documentElement.dataset.cobillTheme = saved;
+    })();
+    </script>
+    <style>
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        main { display: flex; flex: 1; align-items: center; justify-content: center; padding: 24px; }
+        .login-card {
+            max-width: 380px;
+            width: 100%;
+            padding: 32px 28px;
+        }
+        .login-card h1 {
+            margin: 0 0 4px;
+            text-align: center;
+            font-size: 1.4em;
+            letter-spacing: 0.08em;
+        }
+        .login-card .tag {
+            text-align: center;
+            margin: 0 0 24px;
+            opacity: 0.7;
+            font-size: 0.85em;
+        }
+        .login-card form { display: grid; gap: 12px; }
+        .login-card input { width: 100%; padding: 8px 10px; font: inherit; }
+        .login-card .submit {
+            margin-top: 8px;
+            font-weight: bold;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <script>
+    document.body.className = 'theme-' +
+        (document.documentElement.dataset.cobillTheme || 'terminal');
+    </script>
+
+    <main>
+        <section class="panel login-card">
+            <h1>L E&nbsp;&nbsp;C O B O L</h1>
+            <p class="tag">Facturation décimale</p>
+            <p class="tag" style="margin-top:-12px">
+                <a href="/" class="back-link">&larr; retour au site</a>
+            </p>
+
+            <form action="/cgi-bin/auth?action=login" method="post">
+                <label for="u">Username</label>
+                <input id="u" name="username" autocomplete="username"
+                       autofocus required value="admin">
+
+                <label for="p">Password</label>
+                <input id="p" name="password" type="password"
+                       autocomplete="current-password" required>
+
+                <button type="submit" class="btn-primary submit">
+                    [LOG IN]
+                </button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
