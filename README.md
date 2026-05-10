@@ -58,6 +58,12 @@ Pour le déploiement complet, voir [Cobill/deploy/README.md](Cobill/deploy/READM
 
 JavaScript total : 14 Ko (HTMX). Aucune dépendance npm.
 
+## Licence
+
+AGPL-3.0-or-later. Voir [LICENSE](LICENSE).
+
+Le Cobol est un logiciel libre que tu peux auto-héberger pour ton activité. Si tu le modifies et que tu en exposes une version sur un serveur public, l'AGPL t'oblige à publier les sources de ta version aux utilisateurs du service.
+
 <p align="center">
   <img src="duck.png" alt="" width="400">
 </p>
