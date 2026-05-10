@@ -1,3 +1,24 @@
+      *> client.cob
+      *>
+      *> Client CRUD endpoint. List, create, edit and soft-delete
+      *> client records stored in data/clients.dat.
+      *>
+      *> Endpoint:   /cgi-bin/client
+      *> Auth gate:  yes (auth-check.cpy)
+      *> Methods:    GET for list/new/get, POST for create/update/
+      *>             delete (HTMX form submissions).
+      *>
+      *> Recognized actions (via the "action" form field):
+      *>   list    -> HTML table of all non-deleted clients
+      *>   new     -> empty creation form
+      *>   create  -> auto-assign id, persist, return refreshed list
+      *>   get     -> load one client by id, render edit form
+      *>   update  -> REWRITE the existing record, return list
+      *>   delete  -> soft delete (CLI-DELETED = "Y"), return list
+      *>
+      *> Soft delete (rather than physical DELETE) preserves the
+      *> foreign-key referential integrity of historical invoices
+      *> that link back to a now-removed client.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. CLIENT.
 
@@ -7,6 +28,10 @@
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
+      *>     Client store. Indexed on CLI-ID (system-generated
+      *>     primary key) with an alternate key on CLI-NAME for
+      *>     name-based lookups. Duplicates on CLI-NAME are
+      *>     allowed because two clients can share a trade name.
            SELECT CLIENT-FILE
                ASSIGN TO "data/clients.dat"
                ORGANIZATION IS INDEXED
@@ -16,6 +41,7 @@
                    WITH DUPLICATES
                FILE STATUS IS WS-FILE-STATUS.
 
+      *>     Session file, opened by the auth gate.
            SELECT SESSION-FILE
                ASSIGN TO "data/sessions.dat"
                ORGANIZATION IS INDEXED
@@ -35,24 +61,40 @@
        COPY "cgi-utils-ws.cpy".
        COPY "auth-check-ws.cpy".
 
+      *> ISAM file status. "00" = success, "35" = file not found,
+      *> "23" = INVALID KEY on READ/WRITE.
        01  WS-FILE-STATUS          PIC XX.
+
+      *> Action requested by the client. Defaults to "list" so a
+      *> bare GET /cgi-bin/client shows the table.
        01  WS-ACTION               PIC X(10) VALUE "list".
+
+      *> Loop control + row count for the listing.
        01  WS-EOF                  PIC X     VALUE "N".
        01  WS-ROW-COUNT            PIC 9(4)  VALUE 0.
 
+      *> Working storage for the auto-numbered id generator.
+      *> WS-NEXT-ID is the next free slot (1-based). WS-CUR-ID is
+      *> the numeric suffix of the row currently being scanned.
+      *> WS-FORMATTED-ID is the final "CLI-NNNNNN" string written
+      *> into CLI-ID.
        01  WS-NEXT-ID              PIC 9(6)  VALUE 0.
        01  WS-CUR-ID               PIC 9(6)  VALUE 0.
        01  WS-FORMATTED-ID         PIC X(10).
 
+      *> Client id pulled out of the form (for get, update, delete).
        01  WS-LOOKUP-ID            PIC X(10).
 
        PROCEDURE DIVISION.
        MAIN-LOGIC.
+      *>   Standard CGI prologue: read request, parse form data,
+      *>   enforce auth, emit content-type header.
            PERFORM READ-CGI-INPUT
            PERFORM PARSE-CGI-INPUT
            COPY "auth-check.cpy".
            PERFORM EMIT-HTML-HEADERS
 
+      *>   Dispatch table on the "action" form field.
            MOVE "action" TO CGI-L-KEY
            PERFORM FIND-FIELD
            IF CGI-L-FOUND = "Y"
@@ -78,8 +120,15 @@
 
            STOP RUN.
 
-      *> ACTION-LIST — sequential read of all (non-deleted) clients,
-      *> rendered as an HTML table with HTMX action buttons per row.
+      *> ACTION-LIST
+      *>
+      *> Sequential walk through the whole client file, filtering
+      *> out soft-deleted rows (CLI-DELETED = "Y"), and rendering
+      *> each surviving record as a table row with HTMX-driven
+      *> [EDIT] / [DELETE] buttons.
+      *>
+      *> Empty file (status "35") is rendered as a friendly
+      *> "No clients yet" rather than an error.
        ACTION-LIST.
            OPEN INPUT CLIENT-FILE
 
@@ -140,6 +189,16 @@
            DISPLAY "</section>"
            .
 
+      *> RENDER-CLIENT-ROW
+      *>
+      *> Emit one <tr> for the currently-loaded CLIENT-RECORD.
+      *> Every user-controlled cell (id, name, siret, city) goes
+      *> through HTML-ESCAPE so an attacker who managed to inject
+      *> markup into a client name cannot break out of the cell.
+      *>
+      *> The action buttons use HTMX to trigger their own CGI calls
+      *> when clicked, swapping the response into #content. The
+      *> [DELETE] button asks for confirmation through hx-confirm.
        RENDER-CLIENT-ROW.
            DISPLAY "      <tr>"
 
@@ -185,14 +244,22 @@
            DISPLAY "      </tr>"
            .
 
-      *> ACTION-NEW — render an empty creation form.
+      *> ACTION-NEW
+      *>
+      *> Render an empty client creation form. INITIALIZE blanks
+      *> every field (per its PIC type), then CLI-ID is forced to
+      *> SPACES so the form does not show a placeholder id.
        ACTION-NEW.
            INITIALIZE CLIENT-RECORD
            MOVE SPACES TO CLI-ID
            PERFORM RENDER-FORM-NEW
            .
 
-      *> ACTION-GET — read one client by id, render edit form.
+      *> ACTION-GET
+      *>
+      *> Read one client by primary key and render the edit form.
+      *> Missing or unknown id falls through to a friendly "not
+      *> found" panel rather than throwing.
        ACTION-GET.
            PERFORM LOAD-LOOKUP-ID
            IF FUNCTION TRIM(WS-LOOKUP-ID) = SPACES
@@ -218,7 +285,14 @@
            END-READ
            .
 
-      *> create — auto-assign id, write, return refreshed list.
+      *> ACTION-CREATE
+      *>
+      *> Allocate the next free CLI-NNNNNN id, populate the record
+      *> from the form fields, set the creation date, write to the
+      *> file, then return the refreshed list as the response. If
+      *> the write fails (e.g. duplicate id, which should never
+      *> happen because ASSIGN-NEXT-ID just picked an unused one),
+      *> render a write-error panel.
        ACTION-CREATE.
            PERFORM ASSIGN-NEXT-ID
 
@@ -254,7 +328,12 @@
            PERFORM ACTION-LIST
            .
 
-      *> ACTION-UPDATE — REWRITE existing record. id comes from form.
+      *> ACTION-UPDATE
+      *>
+      *> Read the client by id, overwrite every field with the
+      *> matching form value, then REWRITE the record. Created
+      *> date and deletion flag are preserved (POPULATE-FROM-FORM
+      *> does not touch them).
        ACTION-UPDATE.
            PERFORM LOAD-LOOKUP-ID
            IF FUNCTION TRIM(WS-LOOKUP-ID) = SPACES
@@ -290,7 +369,11 @@
            PERFORM ACTION-LIST
            .
 
-      *> ACTION-DELETE — soft delete (CLI-DELETED='Y'), then list.
+      *> ACTION-DELETE
+      *>
+      *> Flip CLI-DELETED to "Y" and REWRITE. The row stays on
+      *> disk so the FK from invoices.dat keeps pointing at a real
+      *> record. ACTION-LIST filters out deleted rows on display.
        ACTION-DELETE.
            PERFORM LOAD-LOOKUP-ID
            IF FUNCTION TRIM(WS-LOOKUP-ID) = SPACES
@@ -324,7 +407,13 @@
            PERFORM ACTION-LIST
            .
 
-      *> Helpers.
+      *> ----- Helpers -----
+
+      *> LOAD-LOOKUP-ID
+      *>
+      *> Pull the "id" form field into WS-LOOKUP-ID. Missing field
+      *> leaves WS-LOOKUP-ID at SPACES, which the callers check
+      *> with FUNCTION TRIM.
        LOAD-LOOKUP-ID.
            MOVE SPACES TO WS-LOOKUP-ID
            MOVE "id" TO CGI-L-KEY
@@ -334,9 +423,14 @@
            END-IF
            .
 
+      *> POPULATE-FROM-FORM
+      *>
+      *> Copy every form field into the CLIENT-RECORD. The id is
+      *> set by the caller (ACTION-CREATE auto-generates it,
+      *> ACTION-UPDATE keeps the existing one), so we never
+      *> overwrite CLI-ID here. The created date and deletion
+      *> flag are similarly preserved.
        POPULATE-FROM-FORM.
-      *>   id stays from the caller (auto-assigned for create,
-      *>   read from key for update).
            MOVE "name" TO CGI-L-KEY
            PERFORM FIND-FIELD
            MOVE CGI-L-VALUE TO CLI-NAME
@@ -370,6 +464,12 @@
            MOVE CGI-L-VALUE TO CLI-PHONE
            .
 
+      *> OPEN-CLIENT-FILE-IO
+      *>
+      *> Open the client file for read-write. On a brand-new
+      *> install the file does not exist (status "35"); recover
+      *> by opening in OUTPUT mode to create it, then reopening
+      *> in I-O.
        OPEN-CLIENT-FILE-IO.
            OPEN I-O CLIENT-FILE
            IF WS-FILE-STATUS = "35"
@@ -379,8 +479,17 @@
            END-IF
            .
 
-      *> Scan the file once, find the largest numeric suffix in
-      *> CLI-NNNNNN, return the next id in WS-FORMATTED-ID.
+      *> ASSIGN-NEXT-ID
+      *>
+      *> Walk the whole file once and keep the largest numeric
+      *> suffix found in any CLI-NNNNNN id, then add 1. Result
+      *> goes to WS-FORMATTED-ID in the canonical "CLI-NNNNNN"
+      *> form.
+      *>
+      *> O(n) but n stays well below 1000 for solo use, and the
+      *> alternative (a dedicated counter file) would add a state
+      *> we would need to keep in sync. Empty / missing file
+      *> defaults to id 1.
        ASSIGN-NEXT-ID.
            MOVE 0 TO WS-NEXT-ID
            OPEN INPUT CLIENT-FILE
@@ -418,6 +527,11 @@
            PERFORM FORMAT-NEXT-ID
            .
 
+      *> FORMAT-NEXT-ID
+      *>
+      *> Render WS-NEXT-ID (a 6-digit numeric) into WS-FORMATTED-ID
+      *> as "CLI-NNNNNN". STRING ... DELIMITED BY SIZE copies the
+      *> full source field, so leading zeros are preserved.
        FORMAT-NEXT-ID.
            MOVE SPACES TO WS-FORMATTED-ID
            STRING "CLI-"        DELIMITED BY SIZE
@@ -425,7 +539,13 @@
                INTO WS-FORMATTED-ID
            .
 
-      *> Form rendering (new + edit share most markup).
+      *> ----- Form rendering -----
+      *>
+      *> The create and edit paths share the same markup; the only
+      *> differences are the title, the action attribute, and a
+      *> hidden id field for update. RENDER-FORM-NEW and
+      *> RENDER-FORM-EDIT just set WS-ACTION and delegate.
+
        RENDER-FORM-NEW.
            MOVE "create" TO WS-ACTION
            PERFORM RENDER-FORM
@@ -525,6 +645,15 @@
            DISPLAY "    </div>"
            .
 
+      *> EMIT-FIELD-SIRET
+      *>
+      *> SIRET input plus the [INSEE] button. The button triggers
+      *> a GET /cgi-bin/sirene with hx-include='#f-siret' so the
+      *> currently typed value is sent along. The response is
+      *> a small hint span (success or error) that swaps into
+      *> #sirene-hint, plus four hx-swap-oob inputs that update
+      *> the matching #f-name, #f-addr, #f-zip, #f-city fields
+      *> in this same form (see sirene.cob).
        EMIT-FIELD-SIRET.
            MOVE CLI-SIRET TO HTML-IN
            PERFORM HTML-ESCAPE
@@ -566,7 +695,12 @@
            DISPLAY "    </div>"
            .
 
-      *> Error renderers.
+      *> ----- Error renderers -----
+      *> Each returns a small HTML fragment that HTMX swaps into
+      *> #content. No 4xx status code is used (HTMX would not
+      *> swap the response body), so the message itself signals
+      *> the failure.
+
        RENDER-MISSING-ID.
            DISPLAY "<div class='echo'>"
            DISPLAY "  <h2>MISSING ID</h2>"
@@ -597,6 +731,7 @@
            DISPLAY "</div>"
            .
 
+      *> Auth gate paragraphs and shared CGI helpers.
        COPY "auth-check-procs.cpy".
        COPY "cgi-utils-procs.cpy".
 

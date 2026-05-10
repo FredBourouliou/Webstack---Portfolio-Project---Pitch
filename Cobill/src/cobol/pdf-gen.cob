@@ -1,3 +1,28 @@
+      *> pdf-gen.cob
+      *>
+      *> Build a PDF invoice from an INVOICE-RECORD by writing a
+      *> PostScript document and converting it through Ghostscript.
+      *> The PostScript text is constructed line by line in this
+      *> program; no HTML, no headless browser, no third-party
+      *> PDF library are involved.
+      *>
+      *> Endpoint:   /cgi-bin/pdf?number=YYYY-NNNN
+      *> Auth gate:  yes
+      *> Method:     GET
+      *>
+      *> Outputs:
+      *>   pdf/INV-YYYY-NNNN.ps    (PostScript source, kept for
+      *>                            audit / debugging)
+      *>   pdf/INV-YYYY-NNNN.pdf   (Ghostscript output)
+      *>
+      *> On success, the program replies with a 302 redirect to
+      *> /pdf/INV-... .pdf, which Apache then serves as a static
+      *> file. On failure (missing number, invoice not found,
+      *> Ghostscript error) it emits an HTML error page.
+      *>
+      *> PostScript layout: A4 portrait, 595 x 842 points. All
+      *> placement coordinates are in PostScript points
+      *> (1 pt = 1/72 inch), origin at the bottom-left corner.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. PDF-GEN.
 
@@ -7,6 +32,8 @@
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
+      *>     Invoice store, READ by primary key to load the row
+      *>     whose number was given in the URL.
            SELECT INVOICE-FILE
                ASSIGN TO "data/invoices.dat"
                ORGANIZATION IS INDEXED
@@ -16,6 +43,9 @@
                    WITH DUPLICATES
                FILE STATUS IS WS-INV-STATUS.
 
+      *>     Client file, used to enrich the invoice with the
+      *>     full postal address (the invoice itself only stores
+      *>     CLI-ID + a snapshot of CLI-NAME).
            SELECT CLIENT-FILE
                ASSIGN TO "data/clients.dat"
                ORGANIZATION IS INDEXED
@@ -25,16 +55,21 @@
                    WITH DUPLICATES
                FILE STATUS IS WS-CLI-STATUS.
 
+      *>     Static PostScript prolog (procedure definitions,
+      *>     font setup, helpers) shared by every PDF. Copied
+      *>     verbatim into the generated .ps file.
            SELECT PROLOG-FILE
                ASSIGN TO "src/postscript/prolog.ps"
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS WS-PROLOG-STATUS.
 
+      *>     Per-invoice PostScript output, written line by line.
            SELECT PS-FILE
                ASSIGN TO WS-PS-PATH
                ORGANIZATION IS LINE SEQUENTIAL
                FILE STATUS IS WS-PS-STATUS.
 
+      *>     Session file (opened by the auth gate).
            SELECT SESSION-FILE
                ASSIGN TO "data/sessions.dat"
                ORGANIZATION IS INDEXED
@@ -63,45 +98,73 @@
        COPY "cgi-utils-ws.cpy".
        COPY "auth-check-ws.cpy".
 
+      *> ISAM file statuses ("00" = success on each file).
        01 WS-INV-STATUS    PIC XX.
        01 WS-CLI-STATUS    PIC XX.
        01 WS-PROLOG-STATUS PIC XX.
        01 WS-PS-STATUS     PIC XX.
        01 WS-EOF           PIC X VALUE "N".
 
+      *> Invoice number pulled from the query string. Format is
+      *> YYYY-NNNN (9 chars including the dash).
        01 WS-LOOKUP-NUMBER PIC X(9).
+
+      *> Generated file paths: server-side, derived from
+      *> INV-NUMBER, never from raw user input. Safe to use as
+      *> shell arguments.
        01 WS-PS-PATH       PIC X(64).
        01 WS-PDF-PATH      PIC X(64).
        01 WS-PDF-URL       PIC X(64).
+
+      *> Shell command buffer for the Ghostscript call, plus
+      *> the return code.
        01 WS-CMD           PIC X(256).
        01 WS-RC            PIC S9(4).
 
-      *> ---- French amount formatter ------------------------------------
-      *> Numeric input -> "1 234,56" (FR locale: space thousand, comma dec)
+      *> ----- French amount formatter -----
+      *> WS-NUM-IN -> WS-NUM-FR with locale-correct separators:
+      *> thousands as non-breaking spaces, comma as decimal.
        01 WS-NUM-IN        PIC 9(9)V99.
        01 WS-NUM-EDITED    PIC ZZZ,ZZZ,ZZ9.99.
        01 WS-NUM-FR        PIC X(15).
 
-      *> ---- Date formatter --------------------------------------------
+      *> ----- Date formatter -----
+      *> WS-DATE-IN  = "YYYY-MM-DD"
+      *> WS-DATE-FR  = "DD/MM/YYYY"
        01 WS-DATE-IN       PIC X(10).
        01 WS-DATE-FR       PIC X(10).
 
-      *> ---- Loop counters ---------------------------------------------
+      *> ----- Loop counters for line items in the PS table -----
+      *> WS-FIRST-LINE-Y / WS-LINE-STEP set where the first
+      *> table row starts (in PostScript points, y axis runs
+      *> bottom-up) and how much vertical space each row uses.
        01 WS-LINE-IDX      PIC 99.
        01 WS-LINE-Y        PIC 9(4).
        01 WS-FIRST-LINE-Y  PIC 9(4) VALUE 590.
        01 WS-LINE-STEP     PIC 9(2) VALUE 25.
 
-      *> ---- Pre-built PS strings (built once, written many times) ------
+      *> Scratch buffer used while building one PostScript line
+      *> before writing it to PS-FILE.
        01 WS-PS-BUF        PIC X(200).
 
        PROCEDURE DIVISION.
-      *> MAIN — read invoice, build .ps, run gs, redirect to PDF.
+      *> MAIN-LOGIC
+      *>
+      *> Five-step pipeline:
+      *>   1. Read the CGI request, gate on auth.
+      *>   2. Extract ?number= and load the matching invoice from
+      *>      data/invoices.dat. Missing or unknown number short
+      *>      circuits to an HTML error page.
+      *>   3. Enrich with the client's full address.
+      *>   4. Render the .ps source, then run Ghostscript on it.
+      *>   5. Reply with a 302 redirect to the generated PDF, which
+      *>      Apache serves as a static file from /pdf/.
        MAIN-LOGIC.
            PERFORM READ-CGI-INPUT
            PERFORM PARSE-CGI-INPUT
            COPY "auth-check.cpy".
 
+      *>   Required parameter check.
            MOVE "number" TO CGI-L-KEY
            PERFORM FIND-FIELD
            IF CGI-L-FOUND NOT = "Y"
@@ -112,6 +175,8 @@
            END-IF
            MOVE FUNCTION TRIM(CGI-L-VALUE) TO WS-LOOKUP-NUMBER
 
+      *>   Load the invoice header + line items. Missing row
+      *>   surfaces as a "not found" panel rather than a 500.
            PERFORM LOAD-INVOICE
            IF WS-INV-STATUS NOT = "00"
                PERFORM EMIT-HTML-HEADERS
@@ -127,7 +192,11 @@
 
            STOP RUN.
 
-      *> Load invoice by primary key (INV-NUMBER).
+      *> LOAD-INVOICE
+      *>
+      *> Indexed READ by INV-NUMBER. INVALID KEY (status "23")
+      *> means the row does not exist; we map that to a generic
+      *> "not found" code so the caller stays simple.
        LOAD-INVOICE.
            OPEN INPUT INVOICE-FILE
            IF WS-INV-STATUS NOT = "00"
@@ -144,8 +213,13 @@
            END-READ
            .
 
-      *> Pull full client address from clients.dat (the invoice
-      *> only stores CLI-ID + CLI-NAME).
+      *> LOAD-CLIENT-DETAILS
+      *>
+      *> Resolve the foreign key (CLI-ID) into the full client
+      *> record so we can print the address on the PDF. Falls
+      *> through silently if the client has been soft-deleted
+      *> or the FK is blank; the invoice still renders with the
+      *> name snapshot already on the record.
        LOAD-CLIENT-DETAILS.
            IF FUNCTION TRIM(INV-CLIENT-ID) = SPACES
                EXIT PARAGRAPH
@@ -164,7 +238,15 @@
            CLOSE CLIENT-FILE
            .
 
-      *> Build the file paths for this invoice.
+      *> BUILD-PATHS
+      *>
+      *> Compose the three derived paths used downstream:
+      *>   WS-PS-PATH   = "pdf/INV-YYYY-NNNN.ps"   (filesystem)
+      *>   WS-PDF-PATH  = "pdf/INV-YYYY-NNNN.pdf"  (filesystem)
+      *>   WS-PDF-URL   = "/pdf/INV-YYYY-NNNN.pdf" (browser URL)
+      *>
+      *> INV-NUMBER is server-generated so these paths are safe
+      *> to pass to the shell unquoted.
        BUILD-PATHS.
            MOVE SPACES TO WS-PS-PATH
            STRING "pdf/INV-"  DELIMITED BY SIZE
@@ -185,7 +267,24 @@
                INTO WS-PDF-URL
            .
 
-      *> Write the full PostScript document.
+      *> WRITE-PS-FILE
+      *>
+      *> Emit the PostScript source line by line. The document
+      *> is structured top-to-bottom:
+      *>   - DSC header (PS-Adobe-3.0, title, bounding box)
+      *>   - prolog block (font helpers, copied from prolog.ps)
+      *>   - page setup
+      *>   - invoice header (logo strap, invoice number)
+      *>   - from/to addresses block
+      *>   - issue date + due date
+      *>   - line items table (header + up to 10 rows)
+      *>   - totals block (HT, TVA, TTC)
+      *>   - legal mentions
+      *>   - footer
+      *>
+      *> The PostScript file is kept on disk after Ghostscript
+      *> converts it: handy for reproducing a PDF byte-for-byte
+      *> later, or for debugging layout issues.
        WRITE-PS-FILE.
            OPEN OUTPUT PS-FILE
            PERFORM WRITE-DOC-HEADER
@@ -692,7 +791,18 @@
            PERFORM PUT-LINE
            .
 
-      *> Run Ghostscript on the .ps to produce the .pdf.
+      *> RUN-GHOSTSCRIPT
+      *>
+      *> Convert the .ps source into a PDF. Ghostscript flags:
+      *>   -sDEVICE=pdfwrite       output device
+      *>   -dNOPAUSE -dBATCH       non-interactive
+      *>   -dQUIET                 suppress banner
+      *>   -dPDFSETTINGS=/prepress high-quality output (embeds
+      *>                           fonts, preserves vectors)
+      *>
+      *> Both WS-PDF-PATH and WS-PS-PATH come from BUILD-PATHS
+      *> and contain only [A-Z0-9-/_.] characters, so it is safe
+      *> to interpolate them straight into the shell command.
        RUN-GHOSTSCRIPT.
            MOVE SPACES TO WS-CMD
            STRING "gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dQUIET "
@@ -708,7 +818,12 @@
            CALL "SYSTEM" USING WS-CMD
            .
 
-      *> Return a 302 redirect so the browser fetches the static PDF.
+      *> EMIT-REDIRECT
+      *>
+      *> Reply with a 302 to /pdf/INV-... .pdf so Apache serves
+      *> the static file directly (no CGI roundtrip per byte).
+      *> The HTML body is just a fallback link for clients that
+      *> ignore Location.
        EMIT-REDIRECT.
            DISPLAY "Status: 302 Found"
            DISPLAY "Location: " FUNCTION TRIM(WS-PDF-URL)
@@ -718,23 +833,37 @@
                    "'>Download</a>"
            .
 
-      *> Helpers used by callers above.
+      *> ----- Helpers -----
+
+      *> PUT-LINE
+      *>
+      *> Append PS-LINE to the PostScript output file and reset
+      *> the buffer to spaces. Most callers build PS-LINE with
+      *> STRING, then call PUT-LINE.
        PUT-LINE.
            WRITE PS-LINE
            MOVE SPACES TO PS-LINE
            .
 
+      *> FORMAT-NUM-FR
+      *>
+      *> WS-NUM-IN -> WS-NUM-FR with French separators (space
+      *> thousands, comma decimal). The PIC ZZZ,ZZZ,ZZ9.99 edit
+      *> mask produces "1,234.56"; two INSPECT passes flip ","
+      *> to " " and "." to ",".
        FORMAT-NUM-FR.
-      *>   Numeric WS-NUM-IN -> FR-formatted string in WS-NUM-FR.
-      *>   "1234.56" -> "1 234,56" (space thousand, comma decimal).
            MOVE WS-NUM-IN TO WS-NUM-EDITED
            MOVE WS-NUM-EDITED TO WS-NUM-FR
            INSPECT WS-NUM-FR REPLACING ALL "," BY " "
            INSPECT WS-NUM-FR REPLACING ALL "." BY ","
            .
 
+      *> FORMAT-DATE-FR
+      *>
+      *> Convert an ISO date "YYYY-MM-DD" into the French print
+      *> format "DD/MM/YYYY". Falls back to a 10-char copy if
+      *> the dashes are not where expected.
        FORMAT-DATE-FR.
-      *>   "YYYY-MM-DD" -> "DD/MM/YYYY"
            MOVE SPACES TO WS-DATE-FR
            IF WS-DATE-IN(5:1) = "-" AND WS-DATE-IN(8:1) = "-"
                STRING WS-DATE-IN(9:2) DELIMITED BY SIZE
@@ -748,7 +877,11 @@
            END-IF
            .
 
-      *> Error renderers (HTML output, not redirect).
+      *> ----- Error renderers -----
+      *> Reached when the request is invalid or the invoice is
+      *> unknown. Emit an HTML fragment rather than a redirect
+      *> so the user sees what went wrong inside the app shell.
+
        RENDER-MISSING-NUMBER.
            DISPLAY "<div class='echo'>"
            DISPLAY "  <h2>MISSING NUMBER</h2>"
@@ -765,6 +898,7 @@
            DISPLAY "</div>"
            .
 
+      *> Auth gate paragraphs and shared CGI helpers.
        COPY "auth-check-procs.cpy".
        COPY "cgi-utils-procs.cpy".
 

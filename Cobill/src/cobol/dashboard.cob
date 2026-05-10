@@ -1,3 +1,22 @@
+      *> dashboard.cob
+      *>
+      *> Read-only analytics page. Walks the whole invoice file
+      *> once and renders a synthesis of the year:
+      *>   - monthly HT bar chart
+      *>   - quarterly summary (HT / TVA / URSSAF due)
+      *>   - VAT threshold tracker + projected crossing date
+      *>   - aging buckets for unpaid invoices
+      *>   - overdue invoice list
+      *>   - year-to-date totals (HT, TVA, TTC, URSSAF, net)
+      *>
+      *> Endpoint:   /cgi-bin/dashboard
+      *> Auth gate:  yes
+      *> Method:     GET, optional ?year=YYYY to filter (default
+      *>             is the current year).
+      *>
+      *> All aggregates are recomputed on every request from the
+      *> primary source-of-truth (data/invoices.dat). No cache
+      *> file, no cron, no derived state to keep in sync.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. DASHBOARD.
 
@@ -7,6 +26,7 @@
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
+      *>     Invoice store, walked sequentially here.
            SELECT INVOICE-FILE
                ASSIGN TO "data/invoices.dat"
                ORGANIZATION IS INDEXED
@@ -16,6 +36,7 @@
                    WITH DUPLICATES
                FILE STATUS IS WS-INV-STATUS.
 
+      *>     Sessions file (opened by the auth gate).
            SELECT SESSION-FILE
                ASSIGN TO "data/sessions.dat"
                ORGANIZATION IS INDEXED
@@ -38,20 +59,33 @@
        01 WS-EOF           PIC X     VALUE "N".
        01 WS-ACTION        PIC X(10) VALUE "urssaf".
 
-      *> URSSAF / activity config (TODO: load from config.dat).
+      *> URSSAF rate and VAT threshold defaults. Hard-coded for
+      *> v1 (single user, services BNC activity). Will be loaded
+      *> from data/config.dat in v1.2 to support other activity
+      *> classes (BIC sales / BIC services / CIPAV) and their
+      *> matching rates. The "majoré" threshold is currently
+      *> unused in the render path but stays here for the v1.2
+      *> two-tier check.
        01 WS-URSSAF-RATE   PIC V9999  VALUE 0.2200.
        01 WS-ACTIVITY      PIC X(20)  VALUE "BNC (Services)".
        01 WS-VAT-THRESH    PIC 9(7)V99 VALUE 36800.00.
        01 WS-VAT-MAJORE    PIC 9(7)V99 VALUE 39100.00.
 
-      *> ---- Date helpers ---------------------------------------------
+      *> ----- Date helpers -----
        01 WS-CUR-YEAR-NUM  PIC 9(4).
        01 WS-CUR-YEAR      PIC X(4).
        01 WS-FILTER-YEAR   PIC X(4).
        01 WS-INV-MONTH     PIC 99.
        01 WS-INV-Q         PIC 9.
 
-      *> ---- Aggregates ----------------------------------------------
+      *> ----- Aggregates -----
+      *>
+      *> Per-month and per-quarter accumulators. Monthly cells
+      *> feed the bar chart; quarterly cells feed the URSSAF
+      *> declaration table. PIC 9(9)V99 = nine digits before the
+      *> decimal point, two after, so each cell can hold up to
+      *> 999 999 999.99 €.
+
        01 WS-COUNT-TOTAL   PIC 9(4)   VALUE 0.
 
        01 WS-MONTH-AGGS.
@@ -66,18 +100,28 @@
                10 Q-TVA    PIC 9(9)V99 VALUE 0.
                10 Q-URSSAF PIC 9(9)V99 VALUE 0.
 
+      *> Year-to-date totals derived from the monthly aggregates.
        01 WS-YTD-HT        PIC 9(9)V99 VALUE 0.
        01 WS-YTD-TVA       PIC 9(9)V99 VALUE 0.
        01 WS-YTD-TTC       PIC 9(9)V99 VALUE 0.
        01 WS-YTD-URSSAF    PIC 9(9)V99 VALUE 0.
        01 WS-YTD-NET       PIC 9(9)V99 VALUE 0.
 
-      *> Max month HT — drives the bar-chart scale.
+      *> Max month HT. Drives the bar-chart scale: the tallest
+      *> bar always reaches 100 % of the track, others scale
+      *> proportionally.
        01 WS-MAX-HT        PIC 9(9)V99 VALUE 0.
        01 WS-BAR-PCT       PIC 9(3)   VALUE 0.
 
       *> Aging buckets for non-PAID invoices.
-      *> idx 1=not yet due, 2=1-30, 3=31-60, 4=61-90, 5=90+ days late.
+      *>   idx 1 = not yet due
+      *>       2 = 1-30 days late
+      *>       3 = 31-60 days late
+      *>       4 = 61-90 days late
+      *>       5 = over 90 days late
+      *>
+      *> The labels are stored as a packed FILLER block and
+      *> redefined as a table so we can index into them.
        01 WS-AGE-LABELS.
            05 FILLER PIC X(16) VALUE "Not yet due     ".
            05 FILLER PIC X(16) VALUE "1-30 days late  ".
@@ -135,17 +179,25 @@
 
        PROCEDURE DIVISION.
        MAIN-LOGIC.
+      *>   CGI + auth boilerplate.
            PERFORM READ-CGI-INPUT
            PERFORM PARSE-CGI-INPUT
            COPY "auth-check.cpy".
            PERFORM EMIT-HTML-HEADERS
 
+      *>   Three-step pipeline: pick the year, aggregate the
+      *>   invoices, render the page.
            PERFORM RESOLVE-YEAR
            PERFORM AGGREGATE-INVOICES
            PERFORM RENDER-DASHBOARD
            STOP RUN.
 
-      *> Year filter: ?year=YYYY ; default = current year.
+      *> RESOLVE-YEAR
+      *>
+      *> Pick the year to display. Default = the calendar current
+      *> year (FUNCTION CURRENT-DATE(1:4)). The user can override
+      *> via ?year=YYYY in the URL (useful to look at a previous
+      *> tax year).
        RESOLVE-YEAR.
            MOVE FUNCTION CURRENT-DATE(1:4) TO WS-CUR-YEAR
            MOVE WS-CUR-YEAR TO WS-FILTER-YEAR
@@ -158,8 +210,13 @@
            END-IF
            .
 
-      *> Walk the invoice file, accumulate per-month + per-quarter,
-      *> for the selected year only.
+      *> AGGREGATE-INVOICES
+      *>
+      *> Open the invoice file, walk every record sequentially,
+      *> and fold each invoice into the per-month and per-quarter
+      *> tables. Invoices outside the filter year are skipped.
+      *> After the walk, COMPUTE-MAX-MONTH derives the bar-chart
+      *> scale and the YTD URSSAF + net totals.
        AGGREGATE-INVOICES.
            PERFORM COMPUTE-TODAY-INT
 
@@ -182,14 +239,20 @@
            PERFORM COMPUTE-MAX-MONTH
            .
 
+      *> ACCUMULATE-ONE
+      *>
+      *> Process the invoice currently loaded in INVOICE-RECORD:
+      *> add its amounts to the matching month and quarter, then
+      *> classify it into an aging bucket if it is not yet paid.
        ACCUMULATE-ONE.
-      *>   Skip if year doesn't match.
+      *>   Skip invoices outside the filter year.
            IF INV-DATE(1:4) NOT = WS-FILTER-YEAR
                EXIT PARAGRAPH
            END-IF
 
            ADD 1 TO WS-COUNT-TOTAL
 
+      *>   Extract the month component (positions 6-7 of YYYY-MM-DD).
            MOVE INV-DATE(6:2) TO WS-INV-MONTH
            IF WS-INV-MONTH < 1 OR WS-INV-MONTH > 12
                EXIT PARAGRAPH
@@ -198,7 +261,8 @@
            ADD 1                TO M-COUNT(WS-INV-MONTH)
            ADD INV-AMOUNT-HT    TO M-HT(WS-INV-MONTH)
 
-      *>   Quarter = (month-1) / 3 + 1.
+      *>   Quarter mapping: Jan-Mar=1, Apr-Jun=2, Jul-Sep=3,
+      *>   Oct-Dec=4. Formula = (month-1) / 3 + 1.
            COMPUTE WS-INV-Q = (WS-INV-MONTH - 1) / 3 + 1
 
            ADD 1                  TO Q-COUNT(WS-INV-Q)
@@ -218,8 +282,15 @@
            END-IF
            .
 
-      *> Compute days_diff = today - due_date, drop in a bucket,
-      *> append to overdue list when late.
+      *> CLASSIFY-AGE
+      *>
+      *> Compute how many days late the current invoice is, drop
+      *> it in one of the five aging buckets, and (if late) push
+      *> a summary row into the overdue list.
+      *>
+      *> Days math goes through INTEGER-OF-DATE which converts an
+      *> ISO date to a day count since 1601; the difference is
+      *> then a plain integer.
        CLASSIFY-AGE.
            STRING INV-DUE-DATE(1:4) DELIMITED BY SIZE
                   INV-DUE-DATE(6:2) DELIMITED BY SIZE
@@ -256,6 +327,11 @@
            END-IF
            .
 
+      *> COMPUTE-MAX-MONTH
+      *>
+      *> Find the tallest month so the bar chart can scale to it.
+      *> Also derives YTD URSSAF (rate * HT) and net revenue
+      *> (HT - URSSAF) from the running totals.
        COMPUTE-MAX-MONTH.
            MOVE 0 TO WS-MAX-HT
            PERFORM VARYING WS-IDX FROM 1 BY 1 UNTIL WS-IDX > 12
@@ -264,15 +340,18 @@
                END-IF
            END-PERFORM
 
-      *>   YTD URSSAF and net derive from YTD HT.
            COMPUTE WS-YTD-URSSAF ROUNDED =
                WS-YTD-HT * WS-URSSAF-RATE
            SUBTRACT WS-YTD-URSSAF FROM WS-YTD-HT
                GIVING WS-YTD-NET
            .
 
-      *> RENDER — section header, monthly chart, quarterly table,
-      *> YTD totals.
+      *> RENDER-DASHBOARD
+      *>
+      *> Emit the dashboard markup: section header, monthly chart,
+      *> quarterly table, VAT tracker, aging table + overdue list,
+      *> YTD totals. An empty year (no invoices) short-circuits to
+      *> a placeholder message.
        RENDER-DASHBOARD.
            DISPLAY "<section class='panel' id='dashboard-panel'>"
            DISPLAY "  <header class='panel-head'>"
@@ -301,7 +380,12 @@
            DISPLAY "</section>"
            .
 
-      *> Monthly bar chart (pure CSS, no JS).
+      *> RENDER-MONTHLY-CHART
+      *>
+      *> 12-row bar chart, one row per month. The bar uses a
+      *> CSS-driven width percentage; no JavaScript dataviz lib
+      *> is loaded. The tallest month sits at 100 %, the others
+      *> scale proportionally from WS-MAX-HT.
        RENDER-MONTHLY-CHART.
            DISPLAY "  <h3>Monthly revenue (HT)</h3>"
            DISPLAY "  <ul class='barchart'>"
@@ -352,7 +436,11 @@
            END-EVALUATE
            .
 
-      *> Quarterly summary table.
+      *> RENDER-QUARTERLY-TABLE
+      *>
+      *> Four-row table matching the four URSSAF declaration
+      *> periods. The URSSAF site asks for a quarterly cumulative
+      *> figure; this table is the cheat sheet to fill it in.
        RENDER-QUARTERLY-TABLE.
            DISPLAY "  <h3>Quarterly URSSAF declarations</h3>"
            DISPLAY "  <table>"
@@ -400,7 +488,10 @@
            DISPLAY "      </tr>"
            .
 
-      *> YTD totals.
+      *> RENDER-YTD
+      *>
+      *> Five-line summary box: HT collected, TVA collected,
+      *> TTC, URSSAF owed, net revenue (HT minus URSSAF).
        RENDER-YTD.
            DISPLAY "  <h3>Year to date</h3>"
            DISPLAY "  <table class='totals'>"
@@ -438,11 +529,22 @@
            DISPLAY "  </table>"
            .
 
-      *> VAT threshold tracker.
-      *> Computes:
-      *>   pct  = ytd / threshold * 100
-      *>   level = safe / warn / alert / exceeded
-      *>   crossing date = jan1 + threshold / daily_rate
+      *> RENDER-VAT-THRESHOLD
+      *>
+      *> Visual tracker for the VAT exemption threshold (franchise
+      *> en base de TVA): a progress bar, a percentage, and a
+      *> projected crossing date.
+      *>
+      *> Severity levels (drive CSS classes):
+      *>   safe      pct < 80
+      *>   warn      80 <= pct < 90
+      *>   alert     90 <= pct < 100
+      *>   exceeded  pct >= 100  (TVA must be charged from now on)
+      *>
+      *> Crossing date estimation: linearly project the daily
+      *> revenue pace, compute how many more days are needed to
+      *> reach the threshold, add that to Jan 1st of the filter
+      *> year. See COMPUTE-CROSSING-DATE.
        RENDER-VAT-THRESHOLD.
            PERFORM COMPUTE-VAT-METRICS
 
@@ -504,9 +606,14 @@
            PERFORM COMPUTE-CROSSING-DATE
            .
 
+      *> COMPUTE-TODAY-INT
+      *>
+      *> Build today and Jan 1st of the filtered year as day-count
+      *> integers (INTEGER-OF-DATE). Storing them as integers lets
+      *> the aging check (CLASSIFY-AGE) and the VAT projection
+      *> (COMPUTE-CROSSING-DATE) do plain subtraction without
+      *> string parsing.
        COMPUTE-TODAY-INT.
-      *>   Build today + jan1 of the filtered year as date integers,
-      *>   so every later step (aging, vat projection) can subtract.
            STRING WS-FILTER-YEAR DELIMITED BY SIZE
                   "0101"         DELIMITED BY SIZE
                INTO WS-JAN1-DATE
@@ -519,6 +626,20 @@
                                       WS-TODAY-DATE)
            .
 
+      *> COMPUTE-CROSSING-DATE
+      *>
+      *> Estimate when, at the current daily revenue rate, the
+      *> VAT threshold will be crossed.
+      *>
+      *> Steps:
+      *>   daily_rate    = ytd_ht / days_elapsed
+      *>   days_to_cross = threshold / daily_rate   (from Jan 1)
+      *>   projected_eoy = daily_rate * 365
+      *>   cross_date    = jan1 + days_to_cross - 1
+      *>
+      *> Falls out cleanly with WS-CROSS-FR left blank when the
+      *> threshold is unreachable this year (rate too low) or the
+      *> filter year is in the future.
        COMPUTE-CROSSING-DATE.
            MOVE 0 TO WS-DAYS-IN
            MOVE 0 TO WS-DAYS-TO-CROSS
@@ -607,7 +728,12 @@
            END-IF
            .
 
-      *> Outstanding receivables — aging buckets + overdue list.
+      *> RENDER-OUTSTANDING
+      *>
+      *> Two-part section: an aging table (one row per bucket
+      *> with a count and the total amount due) followed by an
+      *> overdue invoice list (line by line). Both come from the
+      *> WS-AGE-* and WS-OD-* tables filled by CLASSIFY-AGE.
        RENDER-OUTSTANDING.
            DISPLAY "  <h3>Outstanding receivables</h3>"
 
@@ -721,14 +847,26 @@
            DISPLAY "      </tr>"
            .
 
-      *> FR amount formatter (same as invoice / pdf-gen).
+      *> FORMAT-NUM-FR
+      *>
+      *> French locale amount formatter: WS-NUM-IN (a fixed-point
+      *> 9(9)V99) becomes WS-NUM-FR with French separators:
+      *>   thousands  = non-breaking space (rendered as space)
+      *>   decimal    = comma
+      *> Same algorithm as invoice.cob / pdf-gen.cob; kept local
+      *> rather than copybooked to limit the surface area.
        FORMAT-NUM-FR.
            MOVE WS-NUM-IN TO WS-NUM-EDITED
            MOVE WS-NUM-EDITED TO WS-NUM-FR
+      *>   The PIC ZZZ,ZZZ,ZZ9.99 editing leaves commas as group
+      *>   separators and "." as the decimal point. Swap them to
+      *>   FR convention with two passes: first commas to spaces,
+      *>   then dots to commas.
            INSPECT WS-NUM-FR REPLACING ALL "," BY " "
            INSPECT WS-NUM-FR REPLACING ALL "." BY ","
            .
 
+      *> Auth gate paragraphs and shared CGI helpers.
        COPY "auth-check-procs.cpy".
        COPY "cgi-utils-procs.cpy".
 

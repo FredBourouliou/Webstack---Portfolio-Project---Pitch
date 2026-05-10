@@ -1,3 +1,28 @@
+      *> invoice.cob
+      *>
+      *> Heart of the application. Invoice CRUD plus the financial
+      *> arithmetic: HT total, TVA, TTC, URSSAF contribution, net
+      *> revenue. Every monetary computation runs in COBOL native
+      *> fixed-point decimal (PIC 9(N)V99) so the values printed
+      *> on the PDF match what the user typed, to the cent.
+      *>
+      *> Endpoint:   /cgi-bin/invoice
+      *> Auth gate:  yes
+      *> Methods:    GET (list / new / get) and POST (create /
+      *>             mark-sent / mark-paid / reopen).
+      *>
+      *> Recognized actions:
+      *>   list         filterable, reverse-chronological table
+      *>   new          empty creation form (10 line-item rows)
+      *>   create       persist a new invoice (auto-numbered)
+      *>   get          load one invoice + render detail view
+      *>   mark-sent    DRAFT -> SENT
+      *>   mark-paid    SENT  -> PAID, records the paid date
+      *>   reopen       PAID  -> SENT (cancel a wrong "mark paid")
+      *>
+      *> The OVERDUE status is computed on the fly when SENT and
+      *> due-date < today, never stored. See COMPUTE-EFFECTIVE-
+      *> STATUS.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. INVOICE.
 
@@ -7,6 +32,8 @@
 
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
+      *>     Invoice store, primary key INV-NUMBER (YYYY-NNNN),
+      *>     alternate key INV-CLIENT-ID for client-scoped lookups.
            SELECT INVOICE-FILE
                ASSIGN TO "data/invoices.dat"
                ORGANIZATION IS INDEXED
@@ -16,6 +43,8 @@
                    WITH DUPLICATES
                FILE STATUS IS WS-INV-STATUS.
 
+      *>     Client file, used to resolve client names in the
+      *>     list view and to populate the <select> in the form.
            SELECT CLIENT-FILE
                ASSIGN TO "data/clients.dat"
                ORGANIZATION IS INDEXED
@@ -25,6 +54,7 @@
                    WITH DUPLICATES
                FILE STATUS IS WS-CLI-STATUS.
 
+      *>     Session file (opened by the auth gate).
            SELECT SESSION-FILE
                ASSIGN TO "data/sessions.dat"
                ORGANIZATION IS INDEXED
@@ -45,13 +75,19 @@
        COPY "cgi-utils-ws.cpy".
        COPY "auth-check-ws.cpy".
 
+      *> ISAM file statuses + dispatch state.
        01  WS-INV-STATUS           PIC XX.
        01  WS-CLI-STATUS           PIC XX.
        01  WS-ACTION               PIC X(10) VALUE "list".
        01  WS-EOF                  PIC X     VALUE "N".
        01  WS-ROW-COUNT            PIC 9(4)  VALUE 0.
 
-      *> List filters + buffer for reverse-chronological emit.
+      *> ----- List view: filters + in-memory buffer -----
+      *> List is rendered reverse-chronologically. ISAM scans the
+      *> primary key in ascending order, so the program reads
+      *> everything into a buffer first, then emits the buffer
+      *> backwards. q = free-text client filter, status = SENT |
+      *> PAID | OVERDUE | DRAFT.
        01  WS-FILTER-Q             PIC X(50).
        01  WS-FILTER-Q-LOWER       PIC X(50).
        01  WS-FILTER-Q-LEN         PIC 9(3) VALUE 0.
@@ -60,9 +96,13 @@
        01  WS-SCAN-IDX             PIC 9(3).
        01  WS-MATCHED              PIC X.
        01  WS-STATUS-LBL           PIC X(8).
+      *> Total amount of all SENT / OVERDUE rows (the receivables
+      *> footer at the bottom of the list).
        01  WS-OUTSTANDING          PIC 9(9)V99 VALUE 0.
        01  WS-DISP-OUTSTANDING     PIC ZZZ,ZZZ,ZZ9.99.
 
+      *> In-memory buffer used by the list view. Capped at 200
+      *> rows, which is one year of fairly heavy solo activity.
        01  WS-INV-COUNT            PIC 9(4) VALUE 0.
        01  WS-INV-IDX              PIC 9(4) VALUE 0.
        01  WS-INV-BUF.
@@ -72,16 +112,23 @@
                10  BUF-DATE        PIC X(10).
                10  BUF-DUE-DATE    PIC X(10).
                10  BUF-TTC         PIC 9(7)V99.
+      *>             Stored status from disk.
                10  BUF-STATUS      PIC X(8).
+      *>             Effective status after the OVERDUE check.
                10  BUF-EFFECTIVE   PIC X(8).
 
+      *> Output buffer for FORMAT-DATE-FR.
        01  WS-DATE-FR              PIC X(10).
 
+      *> Form parameters and runtime fields.
        01  WS-LOOKUP-NUMBER        PIC X(9).
        01  WS-LOOKUP-ID            PIC X(10).
        01  WS-NEW-STATUS           PIC X(8).
        01  WS-TODAY-FMT            PIC X(10).
        01  WS-EFFECTIVE-STATUS     PIC X(8).
+
+      *> Day-count helpers used by COMPUTE-DAYS-LATE. PIC S9(8)
+      *> is the INTEGER-OF-DATE return type (days since 1601).
        01  WS-DAYS-INT             PIC S9(8).
        01  WS-A-DATE               PIC 9(8).
        01  WS-B-DATE               PIC 9(8).
@@ -89,29 +136,40 @@
        01  WS-B-INT                PIC S9(8).
        01  WS-DAYS-LATE            PIC ZZZ9.
 
-      *> Year + sequence for auto-numbering (YYYY-NNNN).
+      *> Auto-numbering state. The next invoice number is
+      *> YYYY-NNNN where YYYY is the current year and NNNN is
+      *> the largest existing sequence + 1. Sequence resets at
+      *> year change (so 2026-9999 -> 2027-0001).
        01  WS-YEAR                 PIC 9(4).
        01  WS-NEXT-SEQ             PIC 9(4)  VALUE 0.
        01  WS-CUR-SEQ              PIC 9(4)  VALUE 0.
 
-      *> Numeric parsing helpers.
+      *> Numeric parsing helpers. PARSE-NUMERIC-QTY /
+      *> PARSE-NUMERIC-RATE-AMOUNT take the raw "1234,56" form
+      *> field and store it as a fixed-point number.
        01  WS-NUM-RAW              PIC X(20).
        01  WS-QTY                  PIC 9(4)V99.
        01  WS-RATE                 PIC 9(5)V99.
        01  WS-LINE-TOTAL           PIC 9(7)V99.
        01  WS-TVA-RATE             PIC V9999.
+      *> URSSAF rate (22 % for BNC services). Hard-coded; v1.2
+      *> reads it from data/config.dat.
        01  WS-URSSAF-RATE          PIC V9999  VALUE 0.2200.
 
-      *> Scratch fields for accumulating line totals.
+      *> Loop indices for the 10-row line-items table.
        01  WS-LINE-IDX             PIC 99.
        01  WS-LINE-KEY             PIC X(8).
 
-      *> Current date helpers (today / today + 30).
+      *> Date helpers used for default issue + due dates.
        01  WS-DATE-RAW             PIC 9(8).
        01  WS-DATE-INT             PIC 9(8).
        01  WS-DATE-FMT             PIC X(10).
 
-      *> Display-edited amounts (ZZZ,ZZ9.99).
+      *> Edited (display-formatted) fixed-point amounts. PIC
+      *> ZZZZ,ZZ9.99 trims leading zeroes and inserts a comma
+      *> thousands separator. The output is later swapped to
+      *> French locale (space thousands, comma decimal) in
+      *> the renderers.
        01  WS-DISP-HT              PIC ZZZZ,ZZ9.99.
        01  WS-DISP-TVA             PIC ZZZZ,ZZ9.99.
        01  WS-DISP-TTC             PIC ZZZZ,ZZ9.99.
@@ -123,11 +181,13 @@
 
        PROCEDURE DIVISION.
        MAIN-LOGIC.
+      *>   CGI + auth boilerplate.
            PERFORM READ-CGI-INPUT
            PERFORM PARSE-CGI-INPUT
            COPY "auth-check.cpy".
            PERFORM EMIT-HTML-HEADERS
 
+      *>   Action dispatch. Default action = "list".
            MOVE "action" TO CGI-L-KEY
            PERFORM FIND-FIELD
            IF CGI-L-FOUND = "Y"
@@ -144,12 +204,15 @@
                WHEN "get"
                    PERFORM ACTION-GET
                WHEN "mark-sent"
+      *>           DRAFT -> SENT
                    MOVE "SENT"  TO WS-NEW-STATUS
                    PERFORM ACTION-CHANGE-STATUS
                WHEN "mark-paid"
+      *>           SENT -> PAID, records the paid date.
                    MOVE "PAID"  TO WS-NEW-STATUS
                    PERFORM ACTION-CHANGE-STATUS
                WHEN "reopen"
+      *>           PAID -> SENT, clears the paid date.
                    MOVE "SENT"  TO WS-NEW-STATUS
                    PERFORM ACTION-CHANGE-STATUS
                WHEN OTHER
@@ -158,10 +221,18 @@
 
            STOP RUN.
 
-      *> ACTION-LIST — filterable, reverse-chronological table.
-      *> Always emits the whole panel; the filter form uses
-      *> hx-select to inject only #invoices-results so input focus
-      *> is preserved across keystrokes.
+      *> ACTION-LIST
+      *>
+      *> Filterable, reverse-chronological invoice list. The
+      *> filter inputs (search box + status dropdown) use HTMX
+      *> with hx-select='#invoices-results' so only the result
+      *> region of the response is swapped in, keeping focus on
+      *> the input across keystrokes.
+      *>
+      *> Implementation: LOAD-INVOICES-INTO-BUFFER reads all
+      *> matching rows into WS-INV-BUF (capped at 200), then
+      *> RENDER-RESULTS-TABLE walks the buffer backwards to emit
+      *> the most recent invoices first.
        ACTION-LIST.
            PERFORM LOAD-LIST-FILTERS
            PERFORM LOAD-INVOICES-INTO-BUFFER
@@ -351,8 +422,11 @@
            DISPLAY "        </tr>"
            .
 
-      *> Pull q + status from CGI, lowercase q for case-insensitive
-      *> match, record its effective length.
+      *> LOAD-LIST-FILTERS
+      *>
+      *> Pull the two filter inputs (q + status) from the form,
+      *> lowercase q for case-insensitive substring matching,
+      *> and remember its effective length.
        LOAD-LIST-FILTERS.
            MOVE SPACES TO WS-FILTER-Q
            MOVE SPACES TO WS-FILTER-Q-LOWER
@@ -376,9 +450,14 @@
            END-IF
            .
 
-      *> Read every invoice, apply filters, buffer matches in
-      *> primary-key order (oldest first). The renderer walks the
-      *> buffer backwards so the newest comes out on top.
+      *> LOAD-INVOICES-INTO-BUFFER
+      *>
+      *> Walk the invoice file front-to-back, run each row
+      *> through EVAL-AND-BUFFER (filter + add to buffer). The
+      *> renderer walks the buffer in reverse so the most recent
+      *> invoices appear at the top of the list. Cap at 200 rows
+      *> so the buffer never blows up; older invoices simply do
+      *> not appear in v1.
        LOAD-INVOICES-INTO-BUFFER.
            MOVE 0 TO WS-INV-COUNT
            MOVE 0 TO WS-OUTSTANDING
@@ -403,6 +482,13 @@
            CLOSE INVOICE-FILE
            .
 
+      *> EVAL-AND-BUFFER
+      *>
+      *> Decide whether the current INVOICE-RECORD passes the
+      *> active filters; if yes, copy the relevant fields into
+      *> the buffer and update the outstanding total. The
+      *> effective status is also computed here so the list view
+      *> does not have to recompute it for every row.
        EVAL-AND-BUFFER.
       *>   Apply status filter.
            IF FUNCTION TRIM(WS-FILTER-STATUS) NOT = SPACES
@@ -439,7 +525,12 @@
            END-IF
            .
 
-      *> Today's date as YYYY-MM-DD, for lexicographic compare.
+      *> COMPUTE-TODAY
+      *>
+      *> Build today's date as a 10-character "YYYY-MM-DD" string,
+      *> stored in WS-TODAY-FMT. ISO format means we can compare
+      *> two dates lexicographically (string compare) and get the
+      *> same answer as a chronological compare.
        COMPUTE-TODAY.
            MOVE SPACES TO WS-TODAY-FMT
            STRING FUNCTION CURRENT-DATE(1:4) DELIMITED BY SIZE
@@ -450,8 +541,18 @@
                INTO WS-TODAY-FMT
            .
 
-      *> Effective status: stored value, except SENT/DRAFT past due
-      *> become OVERDUE for display purposes only.
+      *> COMPUTE-EFFECTIVE-STATUS
+      *>
+      *> The "OVERDUE" status is never written to disk. Instead,
+      *> it is derived at render time when:
+      *>   - the stored status is not PAID, AND
+      *>   - the due date is set, AND
+      *>   - the due date is before today.
+      *>
+      *> This rules out the entire class of bugs that comes from
+      *> a stale cached status (no cron, no daily job to keep in
+      *> sync). The disk row keeps the true workflow state
+      *> (DRAFT / SENT / PAID), and OVERDUE is just a view.
        COMPUTE-EFFECTIVE-STATUS.
            MOVE INV-STATUS TO WS-EFFECTIVE-STATUS
            IF FUNCTION TRIM(INV-STATUS) NOT = "PAID"
@@ -461,8 +562,14 @@
            END-IF
            .
 
-      *> ACTION-CHANGE-STATUS — REWRITE one invoice with WS-NEW-STATUS.
-      *> Sets / clears INV-PAID-DATE depending on the target status.
+      *> ACTION-CHANGE-STATUS
+      *>
+      *> Update the stored INV-STATUS to WS-NEW-STATUS (set by
+      *> MAIN-LOGIC before this paragraph is invoked). When the
+      *> target is "PAID", record today's date in INV-PAID-DATE;
+      *> when reopening, clear INV-PAID-DATE so the row reverts
+      *> cleanly. Always returns the refreshed list as the
+      *> response.
        ACTION-CHANGE-STATUS.
            MOVE "number" TO CGI-L-KEY
            PERFORM FIND-FIELD
@@ -507,8 +614,13 @@
            PERFORM ACTION-LIST
            .
 
-      *> Substring scan: does WS-LOWER-NAME contain
-      *> WS-FILTER-Q-LOWER(1:WS-FILTER-Q-LEN)?
+      *> SCAN-CLIENT-MATCH
+      *>
+      *> Substring search: does WS-LOWER-NAME contain
+      *> WS-FILTER-Q-LOWER(1:WS-FILTER-Q-LEN) anywhere? Returns
+      *> "Y" or "N" in WS-MATCHED. Plain O(n*m) scan; n is at
+      *> most 50 (client name length), m is at most 50 (query
+      *> length), so the cost is negligible.
        SCAN-CLIENT-MATCH.
            MOVE "N" TO WS-MATCHED
            PERFORM VARYING WS-SCAN-IDX FROM 1 BY 1
@@ -538,8 +650,17 @@
            END-IF
            .
 
-      *> ACTION-NEW — empty invoice form. Builds a client dropdown
-      *> by reading clients.dat sequentially.
+      *> ACTION-NEW
+      *>
+      *> Render an empty invoice creation form: client dropdown
+      *> populated from data/clients.dat, a date + due-date row
+      *> (defaulting to today / today+30), a VAT rate dropdown,
+      *> and a 5-row table of line items.
+      *>
+      *> Sending up to 10 line items is supported by the schema
+      *> (see invoice-record.cpy), but the form only renders 5
+      *> rows at a time to keep the layout readable. v1.1 can
+      *> add an "add row" button if needed.
        ACTION-NEW.
            PERFORM COMPUTE-DEFAULT-DATES
 
@@ -663,7 +784,20 @@
            END-PERFORM
            .
 
-      *> ACTION-CREATE — read form, compute, write, render summary.
+      *> ACTION-CREATE
+      *>
+      *> Persist a new invoice:
+      *>   1. Allocate the next YYYY-NNNN number.
+      *>   2. Copy form fields (client, dates, TVA rate) into
+      *>      the record.
+      *>   3. Read each line item, accumulate HT.
+      *>   4. Run the cascading financial calculations
+      *>      (TVA, TTC, URSSAF, net revenue).
+      *>   5. Set status = DRAFT, write the record.
+      *>   6. Render a summary panel.
+      *>
+      *> All arithmetic is fixed-point decimal with the ROUNDED
+      *> phrase, so values match the printed PDF to the cent.
        ACTION-CREATE.
            PERFORM ASSIGN-NEXT-NUMBER
 
@@ -733,6 +867,17 @@
            PERFORM RENDER-CREATE-SUMMARY
            .
 
+      *> READ-LINE-ITEM
+      *>
+      *> Pull one line item (desc<N>, qty<N>, rate<N>) from the
+      *> form, convert qty and rate to fixed-point numbers, store
+      *> them in the OCCURS slot at index WS-LINE-IDX, and add
+      *> the line total to the running HT.
+      *>
+      *> An empty description is treated as "row not used" and
+      *> the paragraph exits without writing anything; that keeps
+      *> the LINE-COUNT honest when the user only fills the first
+      *> few rows.
        READ-LINE-ITEM.
            MOVE SPACES TO WS-LINE-KEY
            STRING "desc" DELIMITED BY SIZE
@@ -776,7 +921,12 @@
            ADD 1 TO INV-LINE-COUNT
            .
 
-      *> ACTION-GET — read + render one invoice.
+      *> ACTION-GET
+      *>
+      *> Load one invoice by primary key and render its detail
+      *> view (header, full line items table, totals, status
+      *> badge, action buttons). Missing or unknown number drops
+      *> into RENDER-NOT-FOUND.
        ACTION-GET.
            MOVE "number" TO CGI-L-KEY
            PERFORM FIND-FIELD
@@ -964,7 +1114,12 @@
            DISPLAY "      </button>"
            .
 
-      *> Days late = today - due_date (positive integer).
+      *> COMPUTE-DAYS-LATE
+      *>
+      *> Days late = today - due date, clamped to >= 0. Converts
+      *> both ISO dates into day-count integers via
+      *> INTEGER-OF-DATE so the difference works cleanly across
+      *> month and year boundaries.
        COMPUTE-DAYS-LATE.
            MOVE 0 TO WS-DAYS-LATE
            IF INV-DUE-DATE = SPACES
@@ -1041,7 +1196,15 @@
            DISPLAY "  </table>"
            .
 
-      *> Helpers.
+      *> ----- Helpers -----
+
+      *> LOOKUP-CLIENT-NAME
+      *>
+      *> Look up the client by INV-CLIENT-ID and copy CLI-NAME
+      *> into INV-CLIENT-NAME, snapshotting the trade name so
+      *> the invoice keeps showing it even if the client renames
+      *> itself later. Silent on missing client (the FK column
+      *> stays empty).
        LOOKUP-CLIENT-NAME.
            MOVE SPACES TO INV-CLIENT-NAME
            IF FUNCTION TRIM(INV-CLIENT-ID) = SPACES
@@ -1061,6 +1224,12 @@
            CLOSE CLIENT-FILE
            .
 
+      *> OPEN-INVOICE-FILE-IO
+      *>
+      *> Same idempotent bootstrap pattern used by client.cob and
+      *> auth.cob: open I-O, and if the file does not exist yet
+      *> (status "35"), create it with OPEN OUTPUT then reopen
+      *> I-O.
        OPEN-INVOICE-FILE-IO.
            OPEN I-O INVOICE-FILE
            IF WS-INV-STATUS = "35"
@@ -1070,8 +1239,16 @@
            END-IF
            .
 
-      *> Auto-number: scan invoices.dat, find max NNNN for current
-      *> year, return YYYY-(NNNN+1) in WS-LOOKUP-NUMBER.
+      *> ASSIGN-NEXT-NUMBER
+      *>
+      *> Allocate the next free YYYY-NNNN. Scan the invoice file
+      *> end-to-end, find the largest NNNN that already starts
+      *> with the current year, then add 1. NNNN resets to 0001
+      *> at the year change (so 2026-9999 -> 2027-0001).
+      *>
+      *> Returns the formatted number in WS-LOOKUP-NUMBER. Cost
+      *> is O(n) but n is bounded by the year's invoice count
+      *> (<= 1000 in practice for solo activity).
        ASSIGN-NEXT-NUMBER.
            MOVE FUNCTION CURRENT-DATE(1:4) TO WS-YEAR
            MOVE 0 TO WS-NEXT-SEQ
@@ -1114,7 +1291,12 @@
                INTO WS-LOOKUP-NUMBER
            .
 
-      *> Date helpers — today and today+30 in YYYY-MM-DD.
+      *> ----- Date helpers -----
+      *> COMPUTE-DEFAULT-DATES sets WS-DATE-FMT to today's
+      *> ISO date. A subsequent call to ADVANCE-DATE-30 shifts
+      *> WS-DATE-FMT to today + 30 days using INTEGER-OF-DATE /
+      *> DATE-OF-INTEGER for clean month-end handling.
+
        COMPUTE-DEFAULT-DATES.
            MOVE FUNCTION CURRENT-DATE(1:8) TO WS-DATE-RAW
            PERFORM FORMAT-DATE-RAW
@@ -1139,7 +1321,17 @@
                INTO WS-DATE-FMT
            .
 
-      *> Numeric parsing — robust against empty / whitespace input.
+      *> ----- Numeric parsing -----
+      *>
+      *> FUNCTION NUMVAL converts a string like "12.34" into a
+      *> numeric COBOL value. We always check for empty / blank
+      *> input first; passing an all-space string to NUMVAL would
+      *> raise a runtime size error.
+      *>
+      *> Three wrappers because the destination has a different
+      *> PIC: qty (PIC 9(4)V99), unit rate / line amount
+      *> (PIC 9(5)V99), and VAT rate (PIC V9999, decimal only).
+
        PARSE-NUMERIC-QTY.
            IF FUNCTION TRIM(WS-NUM-RAW) = SPACES
                MOVE 0 TO WS-QTY
@@ -1164,7 +1356,11 @@
            END-IF
            .
 
-      *> Error renderers.
+      *> ----- Error renderers -----
+      *> Each emits an HTML fragment that HTMX swaps into
+      *> #content. Status code stays 200 so the swap fires; the
+      *> message in the body conveys what went wrong.
+
        RENDER-NOT-FOUND.
            DISPLAY "<div class='echo'>"
            DISPLAY "  <h2>INVOICE NOT FOUND</h2>"
@@ -1188,6 +1384,7 @@
            DISPLAY "</div>"
            .
 
+      *> Auth gate paragraphs and shared CGI helpers.
        COPY "auth-check-procs.cpy".
        COPY "cgi-utils-procs.cpy".
 
