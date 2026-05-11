@@ -235,3 +235,7 @@ core.*
 *.css.map
 *.js.map
 
+slides/lecobol-pitch.html
+slides/lecobol-demo-script.md
+slides/lecobol-session-handoff*.md
+
