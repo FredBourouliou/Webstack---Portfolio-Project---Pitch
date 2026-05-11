@@ -324,7 +324,7 @@ This document provides working code samples for the three core technologies: COB
 0.6 setgray
 72 60 moveto 523 60 lineto 0.3 setlinewidth stroke
 /Helvetica findfont 8 scalefont setfont
-72 48 moveto (Powered by COBILL  |  COBOL-Powered Invoicing  |  cobill.dev) show
+72 48 moveto (Powered by Le Cobol  |  COBOL-Powered Invoicing  |  lecobol.com) show
 
 showpage
 
