@@ -1,8 +1,9 @@
-.results[0] // {}
+(.results[0] // {}) as $r
+| ($r.matching_etablissements[0] // $r.siege // {}) as $e
 | [
-    (.nom_complet // ""),
-    ((.siege.adresse // "") | gsub("\\s+\\d{5}\\s+\\S+\\s*$"; "")),
-    (.siege.code_postal // ""),
-    (.siege.libelle_commune // "")
+    ($r.nom_complet // ""),
+    (($e.adresse // "") | gsub("\\s+\\d{5}\\s+\\S+\\s*$"; "")),
+    ($e.code_postal // ""),
+    ($e.libelle_commune // "")
   ]
 | join("\n")
